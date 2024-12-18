@@ -438,8 +438,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
-  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  
   ##TODO recheck that this is correct
   # there seems to be something confusing here. dataPath(sim) gives me
   # "C:/Celine/github/spadesCBM/modules/CBM_dataPrep_SK/data", but the next line
@@ -447,28 +446,7 @@ Init <- function(sim) {
   # 'inputs'. Which is "C:/Celine/github/spadesCBM/inputs"
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
-
-  ##TODO we need either use something that checks if the user has run
-  ##CBM_defaults.R or require the user to provide the information that would
-  ##come from CBM_defaults, in another way.
-  #This (below and commented) would be a way to check is all objects are
-  #there...but we can't run it until this module is cleaned up and the expected
-  #and created objects are correct.
-  # io <- inputObjects(sim, currentModule(sim))
-  # objectNamesExpected <- io$objectName
-  # available <- objectNamesExpected %in% ls(sim)
-  # if (any(!available)) {
-  #   stop(
-  #     "The inputObjects for CBM_dataPrep_XX are not all available:",
-  #     "These are missing:", paste(objectNamesExpected[!available], collapse = ", "),
-  #     ". \n\nHave you run the ",
-  #     paste0("CBM", c("_defaults"), collapse = ", "),
-  #     "module?"
-  #   )
-  # }
-  #
-
-  ##TODO figure out a way to run this module (CBM_dataPrep_XX) if user doesn't run CBM_defaults.
+  
   ##OLD - delete once everything works for the SK managed forests.
   # # if we chose to not use the RSQLite library in this module, and extract
   # # disturbance matrix id (dmid) from sim$cbmData@disturbanceMatrixAssociation,
@@ -507,9 +485,9 @@ Init <- function(sim) {
   #   sim$pooldef <- CBMutils::.pooldef
   #   sim$poolCount <- length(sim$pooldef)
   # }
-
+  
   # user provided data tables (3)------------------------------------------------------
-
+  
   # 1. growth and yield information
   # userGcM3 and userGcM3URL, these files are the m3/ha and age info by growth
   # curve ID, columns should be GrowthCurveComponentID	Age	MerchVolume
@@ -528,9 +506,9 @@ Init <- function(sim) {
       "The default will be used which is for a region in Saskatchewan."
     )
   }
-
-
-
+  
+  
+  
   # 2. Disturbance information - see disturbance raster below
   # this may be provided by the user, by the defaults or by other modules/family
   # of modules. It is the link between the spatial location of the disturbance
@@ -538,19 +516,19 @@ Init <- function(sim) {
   if (!suppliedElsewhere("userDist", sim)) {
     if (!suppliedElsewhere(sim$userDistFile)) {
       message("There is no disturbance information provided; defaults for the Saskatchewan example run will be used.")
-
-    if (!suppliedElsewhere("userDistURL", sim)) {
-      sim$userDistURL <- extractURL("userDist")
-    }
-    sim$userDist <- prepInputs(url = sim$userDistURL,
-                               targetFile = "userDist.csv",
-                               destinationPath = inputPath(sim),
-                               fun = fread)
+      
+      if (!suppliedElsewhere("userDistURL", sim)) {
+        sim$userDistURL <- extractURL("userDist")
+      }
+      sim$userDist <- prepInputs(url = sim$userDistURL,
+                                 targetFile = "userDist.csv",
+                                 destinationPath = inputPath(sim),
+                                 fun = fread)
     }
   }
-
+  
   # 3. cbmAdmin needed if the user is not running CBM_vol2biomass module.
-
+  
   if (!suppliedElsewhere("cbmAdmin", sim)) {
     if (!suppliedElsewhere("cbmAdminURL", sim)) {
       sim$cbmAdminURL <- extractURL("cbmAdmin")
@@ -560,11 +538,11 @@ Init <- function(sim) {
                                destinationPath = inputPath(sim),
                                fun = fread)
   }
-
+  
   # END user provided data tables (3)------------------------------------------------------
-
+  
   # user provided rasters or spatial information------------------------
-
+  
   ## Rasters
   ## user provides raster to match (masterRaster) which is a raster for the
   ## study area, it will define the crs etc, for all other layers. The user also
@@ -575,25 +553,23 @@ Init <- function(sim) {
   ## These spatial units (or spu) and the ecozones link the CBM-CFS3 ecological
   ## parameters to the right location (example: decomposition rates).
   ##
-
-  ## Jan 2023 addition from Eliot from Zulip R-help
-  options("reproducible.useTerra" = TRUE)
+  
   # 1. Raster to match (masterRaster). This is the study area.
   ##TODO remove this note when we are done making everything work for the small
   ##study area in SK.
   #NOTE: we are providing the masterRaster in the globalCore1.R. This section is
   #being slipped.
-      if (!suppliedElsewhere("masterRaster", sim)) {
-        if (!suppliedElsewhere("masterRasterURL", sim)) {
-    sim$masterRasterURL <- extractURL("masterRaster")
-
+  if (!suppliedElsewhere("masterRaster", sim)) {
+    if (!suppliedElsewhere("masterRasterURL", sim)) {
+      sim$masterRasterURL <- extractURL("masterRaster")
+      
       ##TODO: why is this
       message(
         "User has not supplied a masterRaster or a URL for a masterRaster (masterRasterURL object).\n",
         "masterRaster is going to be read from the default URL given in the inputObjects for ",
         currentModule(sim)
       )
-
+      
       ##TODO this is the masterRaster for all of SK managed forests..why is it
       ##not exactly 30 m res? Need to fix that.
       sim$masterRaster <- prepInputs(
@@ -601,11 +577,11 @@ Init <- function(sim) {
         fun = "terra::rast",
         destinationPath = inputPath(sim)
       )|> Cache()
-
-        }
-
+      
     }
-
+    
+  }
+  
   # 2. Age raster from inventory or from user as a vector
   if(!suppliedElsewhere(sim$ages)){
     if (!suppliedElsewhere(sim$ageRaster)) {
@@ -626,7 +602,7 @@ Init <- function(sim) {
     }
     ##or max age from vector
   }
-
+  
   # 3. What growth curve should be applied to what pixels? Provide a raster or a
   # vector
   if(!suppliedElsewhere(sim$gcids)){
@@ -642,7 +618,7 @@ Init <- function(sim) {
         destinationPath = inputPath(sim))|> Cache()
     }
   }
-
+  
   # 4. Spatial Unit raster. This takes the masterRaster (study area) and figures
   # out what CBM-specific spatial units each pixels. This determines some
   # defaults CBM-parameters across Canada.
@@ -662,7 +638,7 @@ Init <- function(sim) {
       url = sim$spuRasterURL,
       destinationPath = inputPath(sim),
       alsoExtract = "similar")|> Cache()
-
+    
     spuShp <- Cache(postProcess,
                     canadaSpu,
                     to = sim$masterRaster,
@@ -670,13 +646,13 @@ Init <- function(sim) {
                     #targetCRS = terra::crs(sim$masterRaster),
                     useCache = FALSE, filename2 = NULL
     ) |> st_collection_extract("POLYGON")
-
+    
     sim$spuRaster <- terra::rasterize(terra::vect(spuShp),
                                       terra::rast(sim$masterRaster),
-                                      field = "spu_id") |> raster::raster()
+                                      field = "spu_id")
   }
   # }
-
+  
   # 5. Ecozone raster. This takes the masterRaster (study area) and figures
   # out what ecozones each pixels are in. This determines some
   # defaults CBM-parameters across Canada.
@@ -691,51 +667,53 @@ Init <- function(sim) {
                       destinationPath = inputPath(sim),
                       filename1 = "ecozone_shp.zip",
                       # overwrite = TRUE, ## not needed if filename1 specified
-                      fun = "sf::st_read", #"terra::vect",
+                      fun = sf::st_read(targetFile, quiet = TRUE), #"terra::vect",
                       rasterToMatch = sim$masterRaster
     ) ## ecozones is a SpatVect class object
     ## TODO: terra::vect fails on some windows machines. Windows does not
     ## recognize some of the french characters.
     # ecozones <- terra::vect(ecozones)
-
+    
     sim$ecoRaster <- terra::rasterize(ecozones, sim$masterRaster, field = "ECOZONE")
   }
   # }
-
-
-
+  
+  
+  
   ## TODO: hard stop here if there are NA values and have user fix them to prevent issues downstream
   if (any(is.na(values(sim$ecoRaster)))) {
     stop("ecoRaster cannot contain NA values. Please fix these and rerun.")
   }
-
-  dtRasters <- as.data.table(cbind(ages = sim$ageRaster[][,1],
-                                   spatial_unit_id = sim$spuRaster[],
-                                   gcids = sim$gcIndexRaster[][,1],
-                                   ecozones = sim$ecoRaster[][,1]
-  ))
-
+  
+  # Summarize raster values into table
+  dtRasters <- data.table(
+    ages            = terra::values(sim$ageRaster)[,1],
+    spatial_unit_id = terra::values(sim$spuRaster)[,1],
+    gcids           = terra::values(sim$gcIndexRaster)[,1],
+    ecozones        = terra::values(sim$ecoRaster)[,1]
+  )
+  
   # assertion -- if there are both NAs or both have data, then the columns with be the same, so sum is either 0 or 2
   if (isTRUE(P(sim)$doAssertions)) {
     bbb <- apply(dtRasters, 1, function(x) sum(is.na(x)))
     if (!all(names(table(bbb)) %in% c("0", "4")))
       stop("should be only 0 or 4s")
   }
-
+  
   ## There seems to be a caching problem here, the name adjustments
   ##
   sim$allPixDT <- as.data.table(cbind(dtRasters,
                                       pixelIndex = 1:ncell(sim$gcIndexRaster)))
-
-    ##TODO get rid of this name change but keeping it to track "wrong names" through the scripts.
-    # chgNamesTo <- c("growth_curve_component_id", "ages", "ecozones", "spatial_unit_id",
-    #                 "pixelIndex", "growth_curve_id")
-    # setnames(sim$allPixDT,names(sim$allPixDT),chgNamesTo)
-
-
+  
+  ##TODO get rid of this name change but keeping it to track "wrong names" through the scripts.
+  # chgNamesTo <- c("growth_curve_component_id", "ages", "ecozones", "spatial_unit_id",
+  #                 "pixelIndex", "growth_curve_id")
+  # setnames(sim$allPixDT,names(sim$allPixDT),chgNamesTo)
+  
+  
   # 6. Disturbance rasters. The default example is a list of rasters, one for each year.
   #    But these can be provided by another family of modules in the annual event.
-
+  
   ## TODO: add a message if no information is provided asking the user if
   ## disturbances will be provided on a yearly basis.
   if (!suppliedElsewhere("disturbanceRasters", sim)) {
@@ -743,7 +721,7 @@ Init <- function(sim) {
     out <- preProcess(url = extractURL("disturbanceRasters"),
                       destinationPath = file.path(dPath),
                       filename1 = "disturbance_testArea.zip")
-
+    
     sim$disturbanceRasters <- list.files(
       file.path(dPath, "disturbance_testArea"),
       pattern = "[.]grd$",
@@ -751,9 +729,9 @@ Init <- function(sim) {
     )
     stopifnot(length(sim$disturbanceRasters) > 0)
   }
-
-
+  
+  
   # ! ----- STOP EDITING ----- ! #
-
+  
   return(invisible(sim))
 }
