@@ -142,7 +142,7 @@ defineModule(sim, list(
         pixelGroup      = "Pixel group ID",
         ages            = "Stand ages extracted from input 'ageRaster' modified such that all ages are >=3",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuRaster'",
-        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
+        gcids           = "Factor of growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
     createsOutput(
@@ -158,11 +158,6 @@ defineModule(sim, list(
       objectName = "curveID", objectClass = "character",
       desc = paste(
         "Column names in 'level3DT' that uniquely define each pixel group growth curve ID.",
-        "Required input to CBM_vol2biomass")),
-    createsOutput(
-      objectName = "gcids", objectClass = "factor",
-      desc = paste(
-        "Factor of the growth curve IDs for each pixel group.",
         "Required input to CBM_vol2biomass")),
     createsOutput(
       objectName = "ecozones", objectClass = "numeric",
@@ -301,7 +296,7 @@ Init <- function(sim) {
   sim$spatialDT <- spatialDT[, c("pixelIndex", "pixelGroup", names(pgCols)), with = FALSE]
 
 
-  ## Create sim$level3DT, sim$realAges, sim$gcids, and sim$gcids ----
+  ## Create sim$level3DT, sim$realAges, and sim$curveID ----
 
   level3DT <- unique(sim$spatialDT[, -("pixelIndex")])
   setkeyv(level3DT, "pixelGroup")
@@ -310,10 +305,9 @@ Init <- function(sim) {
   sim$curveID <- c("gcids") #, "ecozones" # "id_ecozone"
   ##TODO add to metadata -- use in multiple modules
 
-  # Create sim$gcids and sim$level3DT$gcids as a factor
-  curveID <- sim$curveID
-  sim$gcids <- factor(gcidsCreate(level3DT[, ..curveID]))
-  set(level3DT, NULL, "gcids", sim$gcids)
+  # Set sim$level3DT$gcids to be a factor
+  set(level3DT, j = "gcids",
+      value = factor(CBMutils::gcidsCreate(level3DT[, sim$curveID, with = FALSE])))
 
   # Create 'realAges' output object and set ages to be >= 3
   ## Temporary fix to CBM_core issue: https://github.com/PredictiveEcology/CBM_core/issues/1
