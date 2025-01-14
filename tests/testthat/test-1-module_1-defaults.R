@@ -79,6 +79,9 @@ test_that("Module runs with defaults", {
     nrow(unique(simTest$spatialDT[, c("ages", "spatial_unit_id", "gcids", "ecozones")]))
   )
 
+  # Expect that 'gcids' is a factor
+  expect_true(is.factor(simTest$level3DT$gcids))
+
 
   ## Check output 'speciesPixelGroup' ----
 
@@ -101,18 +104,6 @@ test_that("Module runs with defaults", {
   expect_true(length(simTest$curveID) >= 1)
   expect_true("gcids" %in% simTest$curveID)
   expect_true(all(simTest$curveID %in% names(simTest$level3DT)))
-
-
-  ## Check output 'gcids' ----
-
-  expect_true(!is.null(simTest$gcids))
-  expect_true(inherits(simTest$gcids, "factor"))
-
-  # Check that there is 1 for every pixel group
-  expect_equal(length(simTest$gcids), nrow(simTest$level3DT))
-
-  # Check that there are no NAs
-  expect_true(all(!is.na(simTest$gcids)))
 
 
   ## Check output 'ecozones' ----
