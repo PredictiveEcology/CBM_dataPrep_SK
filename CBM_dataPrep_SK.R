@@ -13,7 +13,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("CBM_dataPrep_SK.Rmd"),
   reqdPkgs = list(
-    "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
+    "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra (<=1.8-5)",
     "reproducible (>=2.1.2)" ,
     "PredictiveEcology/CBMutils@development",
     "PredictiveEcology/LandR@development"
