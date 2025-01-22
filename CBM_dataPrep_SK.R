@@ -418,7 +418,7 @@ Init <- function(sim) {
       distMatid <- c(371, 160, 26, 91)
       match1 <- listDist[disturbance_matrix_id %in% distMatid,]
       match2 <- match1[c(4,3,1,2,2),]
-      sim$mySpuDmids <- cbind(mySpuDmids, match2[,-2])
+      sim$mySpuDmids <- cbind(mySpuDmids, match2[, spatial_unit_id := NULL])
       #
       # if (mySpuDmids$distName[i] == "clearcut") {
       #   ##there is most likely more than one clearcut
@@ -738,6 +738,8 @@ Init <- function(sim) {
 
     if (suppliedElsewhere("disturbanceRastersURL", sim) &
         !identical(sim$disturbanceRastersURL, extractURL("disturbanceRasters"))){
+
+      browser()
 
       drPaths <- preProcess(
         destinationPath = inputPath(sim),
