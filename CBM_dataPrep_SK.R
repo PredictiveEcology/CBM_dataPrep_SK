@@ -739,8 +739,6 @@ Init <- function(sim) {
     if (suppliedElsewhere("disturbanceRastersURL", sim) &
         !identical(sim$disturbanceRastersURL, extractURL("disturbanceRasters"))){
 
-      browser()
-
       drPaths <- preProcess(
         destinationPath = inputPath(sim),
         url = sim$disturbanceRastersURL,
@@ -791,17 +789,18 @@ Init <- function(sim) {
 
       simYears <- start(sim):end(sim)
       if (!all(simYears %in% 1985:2011)) simYears <- 1985:2011
-      sim$disturbanceRasters <- sapply(simYears, function(simYear){
-        setNames(
-          preProcess(
-            destinationPath = inputPath(sim),
-            url         = if (simYear == simYears[[1]]) extractURL("disturbanceRasters"),
-            archive     = if (simYear != simYears[[1]]) file.path(inputPath(sim), "disturbance_testArea.zip"),
-            targetFile  = sprintf("disturbance_testArea/SaskDist_%s.grd", simYear),
-            alsoExtract = "similar",
-            fun         = NA
-          )$targetFilePath,
-          simYear)
+
+      preProcess(
+        destinationPath = inputPath(sim),
+        url         = extractURL("disturbanceRasters"),
+        filename1   = "disturbance_testArea.zip",
+        targetFile  = "disturbance_testArea/SaskDist_1985.grd",
+        alsoExtract = NULL,
+        fun         = NA
+      )
+
+      sim$disturbanceRasters <- sapply(setNames(simYears, simYears), function(simYear){
+        file.path(inputPath(sim), "disturbance_testArea", sprintf("SaskDist_%s.grd", simYear))
       })
     }
   }
