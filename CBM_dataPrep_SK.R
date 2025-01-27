@@ -739,8 +739,6 @@ Init <- function(sim) {
     if (suppliedElsewhere("disturbanceRastersURL", sim) &
         !identical(sim$disturbanceRastersURL, extractURL("disturbanceRasters"))){
 
-      browser()
-
       drPaths <- preProcess(
         destinationPath = inputPath(sim),
         url = sim$disturbanceRastersURL,
@@ -789,20 +787,22 @@ Init <- function(sim) {
         "User has not supplied disturbance rasters ('disturbanceRasters'). ",
         "Default for Saskatchewan will be used.")
 
-      simYears <- start(sim):end(sim)
-      if (!all(simYears %in% 1985:2011)) simYears <- 1985:2011
-      sim$disturbanceRasters <- sapply(simYears, function(simYear){
-        setNames(
-          preProcess(
-            destinationPath = inputPath(sim),
-            url         = if (simYear == simYears[[1]]) extractURL("disturbanceRasters"),
-            archive     = if (simYear != simYears[[1]]) file.path(inputPath(sim), "disturbance_testArea.zip"),
-            targetFile  = sprintf("disturbance_testArea/SaskDist_%s.grd", simYear),
-            alsoExtract = "similar",
-            fun         = NA
-          )$targetFilePath,
-          simYear)
-      })
+      # Set years where disturbance rasters are available
+      distYears <- 1985:2011
+
+      preProcess(
+        destinationPath = inputPath(sim),
+        url         = extractURL("disturbanceRasters"),
+        filename1   = "disturbance_testArea.zip",
+        targetFile  = "ReadMe.txt",
+        fun         = function() NULL,
+        alsoExtract = do.call(c, lapply(distYears, function(simYear){
+          paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
+        })))
+
+      sim$disturbanceRasters <- setNames(
+        file.path(inputPath(sim), "disturbance_testArea", paste0("SaskDist_", distYears, ".grd")),
+        distYears)
     }
   }
 
