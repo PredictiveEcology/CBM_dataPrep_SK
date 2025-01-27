@@ -49,13 +49,6 @@ defineModule(sim, list(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
     expectsInput(
-      objectName = "userDist", objectClass = "data.table",
-      desc = "User provided file that identifies disturbances for simulation, if not there it will use userDistFile",
-      sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH"),
-    expectsInput(
-      objectName = "userDistURL", objectClass = "character",
-      desc = "URL for userDist"),
-    expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
       desc = paste("Provides equivalent between provincial boundaries,",
                    "CBM-id for provincial boundaries and CBM-spatial unit ids. This is used in the CBM_vol2biomass module"),
@@ -106,7 +99,22 @@ defineModule(sim, list(
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
       desc = "URL for disturbanceRasters"
-    )
+    ),
+    expectsInput(
+      objectName = "userDist", objectClass = "data.table",
+      sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH",
+      desc = paste(
+        "Table defines the values present in the disturbance rasters.",
+        "This will be matched with CBM-CFS3 disturbances to create the 'mySpuDmids' table.",
+        "Required if CBM_core input 'mySpuDmids' is not provided elsewhere."),
+      columns = c(
+        rasterID   = "ID links to pixel values in the disturbance rasters",
+        wholeStand = "Specifies if the whole stand is disturbed (1 = TRUE; 0 = FALSE)",
+        name       = "Disturbance name (e.g. 'Wildfire')"
+      )),
+    expectsInput(
+      objectName = "userDistURL", objectClass = "character",
+      desc = "URL for userDist"),
   ),
 
   outputObjects = bindrows(
@@ -180,14 +188,20 @@ defineModule(sim, list(
         "Stand ages extracted from input 'ageRaster' for each pixel group.",
         "Required input to CBM_core.")),
     createsOutput(
+      objectName = "disturbanceRasters", objectClass = "character",
+      desc = paste(
+        "List of disturbance rasters named by the disturbance year.",
+        "This is either downloaded from the default URL or a user provided URL.",
+        "Required input to CBM_core.")),
+    createsOutput(
       objectName = "mySpuDmids", objectClass = "data.frame",
       desc = paste(
-        "Table summarizing disturbances possible within the spatial units.",
+        "Table summarizing CBM-CFS3 disturbances possible within the spatial units.",
+        "This links CBM-CFS3 disturbances with the values in the disturbance rasters.",
         "Required input to CBM_core."),
       columns = c(
-        distName              = "Disturbance name from 'userDist'",
         rasterID              = "Raster ID from 'userDist'",
-        wholeStand            = "wholStand flag from 'userDist'",
+        wholeStand            = "wholeStand flag from 'userDist'",
         spatial_unit_id       = "Spatial unit ID",
         disturbance_type_id   = "Disturbance type ID",
         disturbance_matrix_id = "Disturbance matrix ID",
@@ -205,12 +219,6 @@ defineModule(sim, list(
       desc = paste(
         "Last pass disturbance type for each pixel group.",
         "Examples: 1 = wildfire; 2 = clearcut.",
-        "Required input to CBM_core.")),
-    createsOutput(
-      objectName = "disturbanceRasters", objectClass = "character",
-      desc = paste(
-        "List of disturbance rasters named by the disturbance year.",
-        "This is either downloaded from the default URL or a user provided URL.",
         "Required input to CBM_core."))
   )
 ))
@@ -353,64 +361,39 @@ Init <- function(sim) {
 
   ## Create sim$mySpuDmids, sim$historicDMtype, and sim$lastPassDMtype ----
 
-  # Read user disturbances
-  userDist <- sim$userDist
-
-  if (!inherits(userDist, "data.table")){
-    userDist <- tryCatch(
-      data.table::as.data.table(userDist),
-      error = function(e) stop(
-        "'userDist' could not be converted to data.table: ", e$message, call. = FALSE))
-  }
-
-  reqCols <- c("distName", "rasterID", "wholeStand")
-  if (!all(reqCols %in% names(userDist))) stop(
-    "'userDist' must have the following columns: ",
-    paste(shQuote(reqCols), collapse = ", "))
-  userDist <- userDist[, .(distName, rasterID, wholeStand)]
-
   # List disturbances possible within in each spatial unit
-  spuIDs <- unique(sim$spatialDT$spatial_unit_id)
+  spuIDs <- unique(sim$level3DT$spatial_unit_id)
   listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
 
-  # Match user disturbances with CBM-CFS3 disturbance matrices
-  userDistSpu <- do.call(rbind, lapply(spuIDs, function(spuID){
-    cbind(spatial_unit_id = spuID, userDist)
-  }))
+  if (!suppliedElsewhere("mySpuDmids", sim)){
 
-  ldMatch <- cbind(listDist, matchName = tolower(listDist$name))
+    # Read user disturbances
+    userDist <- sim$userDist
 
-  ## Allow for some special cases
-  ldMatchSpecial <- rbind(
-    subset(data.table::copy(listDist),
-           grepl("^Clearcut harvesting without salvage$", name, ignore.case = TRUE))[
-             , matchName := "clearcut"],
-    subset(data.table::copy(listDist),
-           grepl("^Generic [0-9]{1,3}% mortality$", name, ignore.case = TRUE))[
-             , matchName := gsub("Generic ", "", name)]
-  )
+    if (!inherits(userDist, "data.table")){
+      userDist <- tryCatch(
+        data.table::as.data.table(userDist),
+        error = function(e) stop(
+          "'userDist' could not be converted to data.table: ", e$message, call. = FALSE))
+    }
 
-  ldMatch <- rbind(
-    ldMatch,
-    ldMatchSpecial[!ldMatch[, c("spatial_unit_id", "matchName"), with = F],
-                   on = c("spatial_unit_id", "matchName")]
-  )
+    # Match user disturbances with CBM-CFS3 disturbance matrices
+    userDistSpu <- do.call(rbind, lapply(spuIDs, function(spuID){
+      cbind(spatial_unit_id = spuID, userDist)
+    }))
 
-  sim$mySpuDmids <- data.table::merge.data.table(
-    cbind(userDistSpu, matchName = tolower(userDist$distName)),
-    ldMatch, by = c("spatial_unit_id", "matchName"),
-    all = FALSE, sort = FALSE)[, matchName := NULL]
+    askUser <- interactive() & !identical(Sys.getenv("TESTTHAT"), "true")
+    if (askUser) message(
+      "Prompting user to match input disturbances with CBM-CFS3 disturbance matrix IDs:")
 
-  noMatch <- userDistSpu[!sim$mySpuDmids[, names(userDistSpu), with = F], on = names(userDistSpu)]
-  if (nrow(noMatch) > 0) stop(
-    "Could not find CBM-CFS3 disturbance matrix match for disturbance(s):\n- ",
-    paste(sapply(split(noMatch, 1:nrow(noMatch)), function(nmr){
-      colChar <- sapply(nmr, is.character)
-      paste(c(
-        sapply(which(!colChar), function(i) paste(names(nmr)[[i]], "=", nmr[[i]])),
-        sapply(which( colChar), function(i) paste(names(nmr)[[i]], "=", shQuote(nmr[[i]])))
-      ), collapse = "; ")
-    }), collapse = "\n- "))
+    userDistMatch <- CBMutils::spuDistMatch(
+      userDistSpu, listDist = listDist,
+      ask = askUser)
+
+    sim$mySpuDmids <- cbind(
+      userDist[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+      userDistMatch)
+  }
 
   # Set sim$historicDMtype to be wildfire
   sim$historicDMtype <- data.table::merge.data.table(
@@ -463,7 +446,7 @@ Init <- function(sim) {
   }
 
   # 2. Disturbance information
-  if (!suppliedElsewhere("userDist", sim)){
+  if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("mySpuDmids", sim)){
 
     if (suppliedElsewhere("userDistURL", sim) &
         !identical(sim$userDistURL, extractURL("userDist"))){
