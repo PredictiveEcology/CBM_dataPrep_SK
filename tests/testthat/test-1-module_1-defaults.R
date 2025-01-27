@@ -29,7 +29,11 @@ test_that("Module runs with defaults", {
       dbPath     = .test_defaultInputs("dbPath"),
       spinupSQL  = .test_defaultInputs("spinupSQL"),
       species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta")
+      gcMeta     = .test_defaultInputs("gcMeta"),
+
+      # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
+      # User input is required to match the default 'userDist' with CBM-CFS3 disturbances
+      mySpuDmids = "skip_reading_default_userDist"
     )
   )
 
@@ -138,27 +142,6 @@ test_that("Module runs with defaults", {
   # Check that the real ages match the original ages where <3 now equals 3
   expect_equal(simTest$realAges[simTest$realAges >= 3], simTest$level3DT$ages[simTest$realAges >= 3])
   expect_true(all(simTest$ages[simTest$realAges < 3] == 3))
-
-
-  ## Check output 'mySpuDmids' ----
-
-  expect_true(!is.null(simTest$mySpuDmids))
-  expect_true(inherits(simTest$mySpuDmids, "data.table"))
-
-  for (colName in c(
-    "distName", "name", "description")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.character(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
-
-  for (colName in c(
-    "rasterID", "spatial_unit_id", "wholeStand",
-    "disturbance_type_id", "disturbance_matrix_id")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.numeric(simTest$mySpuDmids[[colName]]) | is.integer(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
 
 
   ## Check output 'historicDMtype' ----

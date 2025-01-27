@@ -49,13 +49,6 @@ defineModule(sim, list(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
     expectsInput(
-      objectName = "userDist", objectClass = "data.table",
-      desc = "User provided file that identifies disturbances for simulation, if not there it will use userDistFile",
-      sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH"),
-    expectsInput(
-      objectName = "userDistURL", objectClass = "character",
-      desc = "URL for userDist"),
-    expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
       desc = paste("Provides equivalent between provincial boundaries,",
                    "CBM-id for provincial boundaries and CBM-spatial unit ids. This is used in the CBM_vol2biomass module"),
@@ -106,7 +99,22 @@ defineModule(sim, list(
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
       desc = "URL for disturbanceRasters"
-    )
+    ),
+    expectsInput(
+      objectName = "userDist", objectClass = "data.table",
+      sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH",
+      desc = paste(
+        "Table defines the values present in the disturbance rasters.",
+        "This will be matched with CBM-CFS3 disturbances to create the 'mySpuDmids' table.",
+        "Required if CBM_core input 'mySpuDmids' is not provided elsewhere."),
+      columns = c(
+        rasterID   = "ID links to pixel values in the disturbance rasters",
+        wholeStand = "Specifies if the whole stand is disturbed (1 = TRUE; 0 = FALSE)",
+        name       = "Disturbance name (e.g. 'Wildfire')"
+      )),
+    expectsInput(
+      objectName = "userDistURL", objectClass = "character",
+      desc = "URL for userDist"),
   ),
 
   outputObjects = bindrows(
@@ -175,14 +183,20 @@ defineModule(sim, list(
         "Stand ages extracted from input 'ageRaster' for each pixel group.",
         "Required input to CBM_core.")),
     createsOutput(
+      objectName = "disturbanceRasters", objectClass = "character",
+      desc = paste(
+        "List of disturbance rasters named by the disturbance year.",
+        "This is either downloaded from the default URL or a user provided URL.",
+        "Required input to CBM_core.")),
+    createsOutput(
       objectName = "mySpuDmids", objectClass = "data.frame",
       desc = paste(
-        "Table summarizing disturbances possible within the spatial units.",
+        "Table summarizing CBM-CFS3 disturbances possible within the spatial units.",
+        "This links CBM-CFS3 disturbances with the values in the disturbance rasters.",
         "Required input to CBM_core."),
       columns = c(
-        distName              = "Disturbance name from 'userDist'",
         rasterID              = "Raster ID from 'userDist'",
-        wholeStand            = "wholStand flag from 'userDist'",
+        wholeStand            = "wholeStand flag from 'userDist'",
         spatial_unit_id       = "Spatial unit ID",
         disturbance_type_id   = "Disturbance type ID",
         disturbance_matrix_id = "Disturbance matrix ID",
@@ -200,12 +214,6 @@ defineModule(sim, list(
       desc = paste(
         "Last pass disturbance type for each pixel group.",
         "Examples: 1 = wildfire; 2 = clearcut.",
-        "Required input to CBM_core.")),
-    createsOutput(
-      objectName = "disturbanceRasters", objectClass = "character",
-      desc = paste(
-        "List of disturbance rasters named by the disturbance year.",
-        "This is either downloaded from the default URL or a user provided URL.",
         "Required input to CBM_core."))
   )
 ))
@@ -345,106 +353,50 @@ Init <- function(sim) {
   sim$speciesPixelGroup <- speciesPixelGroup
 
 
-  ## Create sim$mySpuDmids ----
+  ## Create sim$mySpuDmids, sim$historicDMtype, and sim$lastPassDMtype ----
 
-  # Matching the disturbances with the Disturbance Matrix IDs in CBM-CFS3 defaults
-  # make the disturbance look-up table to the disturbance_matrix_id(s)
-  # making sim$mySpuDmids
-  userDist <- sim$userDist
+  # List disturbances possible within in each spatial unit
+  spuIDs <- unique(sim$level3DT$spatial_unit_id)
+  listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
 
-  if (!inherits(userDist, "data.table")){
-    userDist <- tryCatch(
-      data.table::as.data.table(userDist),
-      error = function(e) stop(
-        "'userDist' could not be converted to data.table: ", e$message, call. = FALSE))
+  if (!suppliedElsewhere("mySpuDmids", sim)){
+
+    # Read user disturbances
+    userDist <- sim$userDist
+
+    if (!inherits(userDist, "data.table")){
+      userDist <- tryCatch(
+        data.table::as.data.table(userDist),
+        error = function(e) stop(
+          "'userDist' could not be converted to data.table: ", e$message, call. = FALSE))
+    }
+
+    # Match user disturbances with CBM-CFS3 disturbance matrices
+    userDistSpu <- do.call(rbind, lapply(spuIDs, function(spuID){
+      cbind(spatial_unit_id = spuID, userDist)
+    }))
+
+    askUser <- interactive() & !identical(Sys.getenv("TESTTHAT"), "true")
+    if (askUser) message(
+      "Prompting user to match input disturbances with CBM-CFS3 disturbance matrix IDs:")
+
+    userDistMatch <- CBMutils::spuDistMatch(
+      userDistSpu, listDist = listDist,
+      ask = askUser)
+
+    sim$mySpuDmids <- cbind(
+      userDist[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+      userDistMatch)
   }
 
-  # Most cases will only require fire (wildfire) and a clearcut. There are 426
-  # disturbance matrices identified in the archive of CBM
-  # (sim$cbmData@disturbanceMatrix). Matrices are associated with spatial units
-  # (sim$cbmData@disturbanceMatrixAssociation). User can select any disturbance
-  # they want to represent. Some disturbance matrices are based on data but most
-  # are expert opinion in the CBM-CFS3 archive.
-  # Disturbance Matrices are specific to spatial_units_ids
-  spu <- unique(sim$spatialDT$spatial_unit_id)
-  # what disturbances in those spu(s)?
-  # spuDist() function is in CBMutils package
-  # it lists all the possible disturbances in the CBM-CFS3 archive for that/those
-  # spatial unit with the name of the disturbance in the 3rd colum.
-  listDist <- CBMutils::spuDist(spu, sim$dbPath)
+  # Set sim$historicDMtype to be wildfire
+  sim$historicDMtype <- data.table::merge.data.table(
+    sim$level3DT,
+    subset(listDist, tolower(name) == "wildfire"),
+    by = "spatial_unit_id"
+  )$disturbance_type_id
 
-  ##TODO make this more generalized so user can customize this to their study
-  ##area
-  ##TODO this is a section that needs to change as we figure out if
-  ##disturbance_type_id needs to be used here instead of disturbance_matrix_id
-
-  # make mySpuDmids (distNames,rasterId,spatial_unit_id,disturbance_matrix_id)
-##CELINE HERE: trying to make mySpyDmids from userDist
-  #if(!suppliedElsewhere(sim$mySpuDmids)){
-    ##repeating each user identified disturbance name for each spu, adding the
-    ##user defined link between the disturbance type and the provided raster (or
-    ##spatial layer), adding the user specified wholeStand flag.
-    distName <- c(rep(userDist$distName, length(spu)))
-    rasterID <- c(rep(userDist$rasterID, length(spu)))
-    wholeStand <- c(rep(userDist$wholeStand, length(spu)))
-    spatial_unit_id <- c(sort(rep(spu, length(userDist$distName))))
-
-    mySpuDmids <- data.table(distName, rasterID, spatial_unit_id, wholeStand)
-
-    #dmid <- data.frame(spatial_unit_id = integer(), disturbance_matrix_id = integer())
-    dmType <- data.frame(disturbance_type_id = integer(),
-                         spatial_unit_id = integer(),
-                         disturbance_matrix_id = integer(),
-                         name = character(),
-                         description = character())
-
- #   for (i in 1:length(mySpuDmids$distName)) {
-
-      ## TODO: present the user with options that live in listDist for the
-      ## specific spu or in sim$cbmData@disturbanceMatrix
-      ## Start with code below. For SK, Celine selected:
-      ##   disturbance_type_id spatial_unit_id disturbance_matrix_id                                name
-      ##1                   1              28                   371                            Wildfire
-      ##2                 204              28                   160 Clearcut harvesting without salvage
-      ##3                   7              28                    26 Deforestation
-      ##4                 168              28                    91 Generic 20% mortality Generic 20% mortality
-      ### DANGER HARD CODED FIXES:
-      distMatid <- c(371, 160, 26, 91)
-      match1 <- listDist[disturbance_matrix_id %in% distMatid,]
-      match2 <- match1[c(4,3,1,2,2),]
-      sim$mySpuDmids <- cbind(mySpuDmids, match2[, spatial_unit_id := NULL])
-      #
-      # if (mySpuDmids$distName[i] == "clearcut") {
-      #   ##there is most likely more than one clearcut
-      #   getCut <- listDist[grep("clear", listDist$name, ignore.case = TRUE), ]
-      #   ##TODO here is where a message to the user with the name and description
-      #   ##columns so they can choose which fits better to there management
-      #   ##interventions.
-      #
-      #   dmType[i, ] <- getCut[4,]
-      # } else {
-      #   getDist <- listDist[grep(sim$mySpuDmids$distName[i], listDist$name, ignore.case = TRUE), ]
-      #   ## Next line is if there are more then one spu
-      #   getDist <- getDist[getDist$spatial_unit_id == mySpuDmids$spatial_unit_id[i], ]
-      #   dmType[i, ] <- getDist[1, ]
-      # }
-  #  }
-
-
-  ## Create sim$historicDMtype and sim$lastPassDMtype ----
-
-  ## TODO: in Canada historic disturbance will always be fire, but the last past may
-  ## not, it could be harvest. Make this optional (the user being able to pick
-  ## the historical and last pass disturbance). If defaults are picked (fire for
-  ## both), write the user a message saying these are the defaults.
-
-  ##to remove...
-  # mySpuFires <- sim$mySpuDmids[grep("wildfire", sim$mySpuDmids$distName, ignore.case = TRUE), ]
-  # myFires <- mySpuFires[spatial_unit_id %in% unique(sim$level3DT$spatial_unit_id), ]
-  # setkey(myFires, spatial_unit_id)
-  # setkey(sim$level3DT, spatial_unit_id)
-  ###DANGER HARDCODED
-  sim$historicDMtype <- rep(sim$mySpuDmids[1,]$disturbance_type_id, dim(sim$level3DT)[1])
+  # Set sim$lastPassDMtype to be wildfire
   ## TODO: this is where it could be something else then fire
   sim$lastPassDMtype <- sim$historicDMtype
 
@@ -488,7 +440,7 @@ Init <- function(sim) {
   }
 
   # 2. Disturbance information
-  if (!suppliedElsewhere("userDist", sim)){
+  if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("mySpuDmids", sim)){
 
     if (suppliedElsewhere("userDistURL", sim) &
         !identical(sim$userDistURL, extractURL("userDist"))){
