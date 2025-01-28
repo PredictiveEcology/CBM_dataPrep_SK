@@ -382,7 +382,8 @@ Init <- function(sim) {
 
     userDistMatch <- CBMutils::spuDistMatch(
       userDistSpu, listDist = listDist,
-      ask = askUser)
+      ask = askUser
+    ) |> Cache()
 
     sim$mySpuDmids <- cbind(
       userDist[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
