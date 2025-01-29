@@ -4,6 +4,9 @@ if (!testthat::is_testing()){
   testthat::source_test_helpers(env = globalenv())
 }
 
+# Authorize Google Drive
+googledrive::drive_auth(path = if (Sys.getenv("GOOGLE_AUTH") != "") Sys.getenv("GOOGLE_AUTH"))
+
 # Set teardown environment
 teardownEnv <- if (testthat::is_testing()) testthat::teardown_env() else parent.frame()
 
