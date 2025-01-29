@@ -31,7 +31,15 @@ test_that("Module runs with study AOI", {
       species_tr = .test_defaultInputs("species_tr"),
       gcMeta     = .test_defaultInputs("gcMeta"),
 
-      masterRaster = terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif"))
+      masterRaster = terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")),
+
+      # Test matching user disturbances with CBM-CFS3 disturbances
+      userDist = rbind(
+        data.frame(rasterID = 1, wholeStand = 1, distName = "Wildfire"),
+        data.frame(rasterID = 2, wholeStand = 1, distName = "Clearcut harvesting without salvage"),
+        data.frame(rasterID = 3, wholeStand = 0, distName = "Generic 20% mortality"),
+        data.frame(rasterID = 4, wholeStand = 1, distName = "Deforestation")
+      )
     )
   )
 
@@ -152,19 +160,46 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  for (colName in c(
-    "distName", "name", "description")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.character(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
+  expect_equal(nrow(simTest$mySpuDmids), 4)
 
-  for (colName in c(
-    "rasterID", "spatial_unit_id", "wholeStand",
-    "disturbance_type_id", "disturbance_matrix_id")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.numeric(simTest$mySpuDmids[[colName]]) | is.integer(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
+  # Check that disturbances have been matched correctly
+  rowsExpect <- rbind(
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 1,
+      wholeStand            = 1,
+      distName              = "Wildfire",
+      disturbance_type_id   = 1,
+      disturbance_matrix_id = 371
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 2,
+      wholeStand            = 1,
+      distName              = "Clearcut harvesting without salvage",
+      disturbance_type_id   = 204,
+      disturbance_matrix_id = 160
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 3,
+      wholeStand            = 0,
+      distName              = "Generic 20% mortality",
+      disturbance_type_id   = 168,
+      disturbance_matrix_id = 91
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 4,
+      wholeStand            = 1,
+      distName              = "Deforestation",
+      disturbance_type_id   = 7,
+      disturbance_matrix_id = 26
+    )
+  )
+
+  for (i in 1:nrow(rowsExpect)){
+    expect_equal(nrow(merge(simTest$mySpuDmids, rowsExpect[i,], by = names(rowsExpect))), 1)
   }
 
 
