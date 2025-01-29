@@ -1,61 +1,123 @@
 
-# Get a list of test directory paths
-## These will need to be updated if a DESCRIPTION file is added.
+# Set up test directories
+SpaDEStestSetUpDirectories <- function(tempDir = tempdir(), teardownEnv = testthat::teardown_env()){
+
+  # List test paths and temporary directories
+  testDirs <- .test_directories()
+
+  # Create temporary directories
+  for (d in testDirs$temp) dir.create(d)
+
+  # Remove temporary directories on test teardown
+  withr::defer({
+    unlink(testDirs$temp$root, recursive = TRUE)
+    if (file.exists(testDirs$temp$root)) warning(
+      "Temporary test directory could not be removed: ", testDirs$temp$root, call. = F)
+  }, envir = teardownEnv, priority = "last")
+
+  # Copy module to temporary location
+  .test_copyModule(testDirs$module, destDir = testDirs$temp$modules)
+
+  # Sink output to file
+  if (testthat::is_testing()) withr::local_output_sink(file.path(testDirs$temp$root, "local_output_sink.txt"))
+
+  # Install "testthat" with dependencies into the R packages directory
+  Require::Install("testthat", libPaths = testDirs$temp$libPath, verbose = -2)
+
+  # Restore library paths after testing
+  withr::local_libpaths(.libPaths(), .local_envir = teardownEnv)
+
+  # Return test directories
+  testDirs
+}
+
+# Set test paths and temporary directories
 .test_directories <- function(tempDir = tempdir()){
 
   testDirs <- list()
 
-  # Set R project location
-  testDirs$Rproj <- ifelse(testthat::is_testing(), dirname(dirname(getwd())), getwd())
+  # Set source module location
+  testDirs$module <- ifelse(testthat::is_testing(), dirname(dirname(getwd())), getwd())
 
   # Set input data path (must be absolute)
-  testDirs$testdata <- file.path(testDirs$Rproj, "tests/testthat", "testdata")
+  ## Could maybe instead use system.file()
+  testDirs$testdata <- file.path(testDirs$module, "tests/testthat", "testdata")
 
   # Set temporary directory paths
   testDirs$temp <- list(
-    root = file.path(tempDir, paste0("testthat-", basename(testDirs$Rproj)))
+    root = file.path(tempDir, paste0("testthat-", basename(testDirs$module)))
   )
-  testDirs$temp$modules  <- file.path(testDirs$temp$root, "modules")  # For modules
   testDirs$temp$inputs   <- file.path(testDirs$temp$root, "inputs")   # For shared inputs
+  testDirs$temp$outputs  <- file.path(testDirs$temp$root, "outputs")  # For test outputs
+  testDirs$temp$modules  <- file.path(testDirs$temp$root, "modules")  # For modules
   testDirs$temp$libPath  <- file.path(testDirs$temp$root, "library")  # R package library
-  testDirs$temp$outputs  <- file.path(testDirs$temp$root, "outputs")  # For unit test outputs
   testDirs$temp$projects <- file.path(testDirs$temp$root, "projects") # For project directories
 
   # Return
   testDirs
 }
 
-# Helper function: copy module
-## This will hopefully be handled by testthat if a DESCRIPTION file is added.
+# Copy module files
 .test_copyModule <- function(moduleDir, destDir, moduleName = basename(moduleDir)){
 
+  # List module files
   modFiles <- file.info(list.files(moduleDir, full = TRUE))
   modFiles$name <- basename(row.names(modFiles))
   modFiles$path <- row.names(modFiles)
 
+  # Create module directory
   modDir <- file.path(destDir, moduleName)
   dir.create(modDir)
 
-  file.copy(modFiles$path[!modFiles$isdir],
-            file.path(modDir, modFiles$name[!modFiles$isdir]))
-  for (d in modFiles$path[modFiles$isdir & modFiles$name %in% c("R", "data")]){
+  # Copy module files
+  copyFiles <- list(
+    files = paste0(basename(moduleDir), ".R"),
+    dirs  = c("R", "data")
+  )
+  for (f in modFiles$path[!modFiles$isdir & modFiles$name %in% copyFiles$files]){
+    file.copy(f, file.path(modDir, basename(f)))
+  }
+  for (d in modFiles$path[ modFiles$isdir & modFiles$name %in% copyFiles$dirs]){
     file.copy(d, modDir, recursive = TRUE)
   }
 }
 
-# Helper function: suppress output and messages; muffle common warnings
-.SpaDESwithCallingHandlers <- function(expr, ...){
+
+# Set global options
+SpaDEStestLocalOptions <- function(teardownEnv = testthat::teardown_env()){
+
+  # Set reproducible options:
+  # - Silence messaging
+  if (testthat::is_testing()) withr::local_options(list(reproducible.verbose = -2), .local_envir = teardownEnv)
+
+  # Set Require package options:
+  # - Clone R packages from user library
+  # - Silence messaging
+  withr::local_options(list(Require.cloneFrom = Sys.getenv("R_LIBS_USER")), .local_envir = teardownEnv)
+  if (testthat::is_testing()) withr::local_options(list(Require.verbose = -2), .local_envir = teardownEnv)
+
+  # Set SpaDES.core options:
+  # - Do not rebuild package documentation
+  withr::local_options(list(spades.moduleCodeChecks = FALSE), .local_envir = teardownEnv)
+  withr::local_options(list(spades.moduleDocument   = FALSE), .local_envir = teardownEnv)
+
+  # Set SpaDES.project options:
+  # - Never update R profile
+  withr::local_options(list(SpaDES.project.updateRprofile = FALSE), .local_envir = teardownEnv)
+}
+
+
+# Helper function: muffle messages and warnings
+SpaDEStestMuffleConditions <- function(expr, suppressWarnings = getOption("spades.test.suppressWarnings", default = FALSE), ...){
 
   if (testthat::is_testing()){
 
-    withr::local_output_sink(tempfile())
-
     withCallingHandlers(
       expr,
-      message = function(c) tryInvokeRestart("muffleMessage"),
+      message               = function(c) tryInvokeRestart("muffleMessage"),
       packageStartupMessage = function(c) tryInvokeRestart("muffleMessage"),
       warning = function(w){
-        if (getOption("spadesCBM.test.suppressWarnings", default = FALSE)){
+        if (suppressWarnings){
           tryInvokeRestart("muffleWarning")
         }else{
           if (grepl("^package ['\u2018]{1}[a-zA-Z0-9.]+['\u2019]{1} was built under R version [0-9.]+$", w$message)){
@@ -67,41 +129,5 @@
     )
 
   }else expr
-}
-
-## Get standard inputs that are usually provided by CBM_defaults or CBM_vol2biomass.
-## RDS data provided where creation of these outputs is more complex than a simple downloads
-.test_defaultInputs <- function(objectName){
-
-  if (objectName == "dbPath"){
-
-    # From CBM_defaults
-    dlURL <- "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db"
-    destPath <- file.path(testDirs$temp$inputs, basename(dlURL))
-    if (!file.exists(destPath)){
-      download.file(url = dlURL, destfile = destPath, mode = "wb", quiet = TRUE)
-    }
-    destPath
-
-  }else if (objectName == "spinupSQL"){
-
-    # From CBM_defaults
-    readRDS(file.path(testDirs$testdata, "spinupSQL.rds"))
-
-  }else if (objectName == "species_tr"){
-
-    # From CBM_defaults
-    readRDS(file.path(testDirs$testdata, "species_tr.rds"))
-
-  }else if (objectName == "gcMeta"){
-
-    # From CBM_vol2biomass
-    dlURL <- "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing"
-    destPath <- file.path(testDirs$temp$inputs, "gcMetaEg.csv")
-    if (!file.exists(destPath)){
-      withr::with_options(c(googledrive_quiet = TRUE), googledrive::drive_download(dlURL, path = destPath))
-    }
-    data.table::fread(destPath)
-  }
 }
 

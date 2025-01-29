@@ -7,31 +7,29 @@ if (!testthat::is_testing()){
 # Set teardown environment
 teardownEnv <- if (testthat::is_testing()) testthat::teardown_env() else parent.frame()
 
-# List test directories
-testDirs <- .test_directories()
+# Set up testing directories
+testDirs <- SpaDEStestSetUpDirectories(teardownEnv = teardownEnv)
 
-# Create temporary directories
-for (d in testDirs$temp) dir.create(d)
-withr::defer({
-  unlink(testDirs$temp$root, recursive = TRUE)
-  if (file.exists(testDirs$temp$root)) warning(
-    "Temporary test directory could not be removed: ", testDirs$temp$root, call. = F)
-}, envir = teardownEnv, priority = "last")
+# Set global options
+SpaDEStestLocalOptions(teardownEnv = teardownEnv)
 
-# Copy module to temporary location
-## This will hopefully be handled by testthat if a DESCRIPTION file is added.
-.test_copyModule(testDirs$Rproj, testDirs$temp$modules)
 
-# Set reproducible options:
-# - Silence messaging
-if (testthat::is_testing()) withr::local_options(list(reproducible.verbose = -2), .local_envir = teardownEnv)
+## Download standard inputs that are usually provided by CBM_defaults or CBM_vol2biomass.
+## RDS data provided where creation of these outputs is more complex than a simple downloads
 
-# Set Require package options:
-# - Clone R packages from user library
-# - Silence messaging
-withr::local_options(list(Require.cloneFrom = Sys.getenv("R_LIBS_USER")), .local_envir = teardownEnv)
-if (testthat::is_testing()) withr::local_options(list(Require.verbose = -2), .local_envir = teardownEnv)
+# Download CBM-CFS3 database usually provided by CBM_defaults
+download.file(
+  url      = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db",
+  destfile = file.path(testDirs$temp$inputs, "dbPath.db"),
+  mode     = "wb",
+  quiet    = TRUE
+)
 
-# Set SpaDES.project option to never update R profile
-withr::local_options(list(SpaDES.project.updateRprofile = FALSE), .local_envir = teardownEnv)
+# Download gcMetaEg usually provided by CBM_vol2biomass
+withr::with_options(
+  c(googledrive_quiet = TRUE),
+  googledrive::drive_download(
+    "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ",
+    path = file.path(testDirs$temp$inputs, "gcMetaEg.csv")
+  ))
 

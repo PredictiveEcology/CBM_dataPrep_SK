@@ -1,0 +1,22 @@
+Package: CBM.dataPrep.SK
+Type: Package
+Title: CBM_dataPrep_SK
+Description: Minimal R package DESCRIPTION to meet testthat requirements.
+Version: 0.0.0.1
+Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Imports:
+  Require,
+  reproducible,
+  SpaDES.core,
+  SpaDES.project,
+  googledrive
+Suggests:
+  testthat,
+  withr,
+  data.table,
+  terra
+Encoding: UTF-8
+License: GPL-3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3

@@ -1,0 +1,8 @@
+^.gitignore
+^\.git$
+^\.github$
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE$
+citation.*
+CBM_dataPrep_SK.*
