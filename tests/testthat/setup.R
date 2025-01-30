@@ -4,18 +4,24 @@ if (!testthat::is_testing()){
   testthat::source_test_helpers(env = globalenv())
 }
 
-# Authorize Google Drive
-googledrive::drive_auth(path = if (Sys.getenv("GOOGLE_AUTH") != "") Sys.getenv("GOOGLE_AUTH"))
-
 # Set teardown environment
 teardownEnv <- if (testthat::is_testing()) testthat::teardown_env() else parent.frame()
 
 # Set up testing directories
-testDirs <- SpaDEStestSetUpDirectories(teardownEnv = teardownEnv)
+testDirs <- SpaDEStestSetUpDirectories(
+  teardownEnv = teardownEnv,
+  testPaths   = "testdata"
+)
 
-# Set global options
+# Set local global options
 SpaDEStestLocalOptions(teardownEnv = teardownEnv)
 
+# Copy module to temporary test directory
+SpaDEStestCopyModule(testDirs)
+
+
+# Authorize Google Drive
+googledrive::drive_auth(path = if (Sys.getenv("GOOGLE_AUTH") != "") Sys.getenv("GOOGLE_AUTH"))
 
 ## Download standard inputs that are usually provided by CBM_defaults or CBM_vol2biomass.
 ## RDS data provided where creation of these outputs is more complex than a simple downloads

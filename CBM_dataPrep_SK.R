@@ -283,7 +283,7 @@ Init <- function(sim) {
   setkeyv(sim$allPixDT, "pixelIndex")
 
   # Create sim$spatialDT: Summarize input raster values where masterRaster is not NA
-  spatialDT <- sim$allPixDT[!is.na(terra::values(sim$masterRaster)[,1]),]
+  spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
 
   spatialDT_isNA <- is.na(spatialDT)
   if (any(spatialDT_isNA)){
