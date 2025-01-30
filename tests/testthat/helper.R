@@ -1,9 +1,62 @@
 
-# Set up test directories
-SpaDEStestSetUpDirectories <- function(tempDir = tempdir(), teardownEnv = testthat::teardown_env()){
+# SpaDES test: Copy module to temporary test directory
+SpaDEStestCopyModule <- function(testDirs, ...){
+
+  .test_copyModule(
+    modulePath = testDirs$package,
+    moduleName = basename(testDirs$package),
+    destDir    = testDirs$temp$modules,
+    ...)
+}
+
+# Copy module files
+.test_copyModule <- function(modulePath, moduleName, destDir,
+                             include = c(paste0(moduleName, ".R"), "R", "data")){
+
+  if (!file.exists(modulePath)) stop(
+    "Module directory not found: ", modulePath)
+
+  # List module files
+  modFiles <- file.info(list.files(modulePath, full = TRUE))
+  modFiles$path <- row.names(modFiles)
+  modFiles$name <- basename(modFiles$path)
+
+  # Create module directory
+  modDir <- file.path(destDir, moduleName)
+  dir.create(modDir)
+
+  # Copy module files
+  copyFiles <- subset(modFiles, name %in% include)
+
+  if (nrow(copyFiles) == 0) stop(
+    "Module files not found in directory: ",
+    file.path(modulePath, moduleName))
+
+  copySuccess <- c()
+  for (i in 1:nrow(copyFiles)){
+    copySuccess[copyFiles[i,]$name] <- suppressWarnings({
+      if (!copyFiles[i,]$isdir){
+        file.copy(copyFiles[i,]$path, file.path(modDir, copyFiles[i,]$name))
+      }else{
+        file.copy(copyFiles[i,]$path, modDir, recursive = TRUE)
+      }
+    })
+  }
+  if (any(!copySuccess)) stop(
+    "Module file(s) failed to copy:\n- ",
+    paste(file.path(moduleName, names(copySuccess)[!copySuccess]), collapse = "\n- ")
+  )
+}
+
+
+# SpaDES test: Set up test directories
+SpaDEStestSetUpDirectories <- function(
+    localOutputSink  = testthat::is_testing(),
+    localMessageSink = FALSE,
+    teardownEnv      = testthat::teardown_env(), ...){
 
   # List test paths and temporary directories
-  testDirs <- .test_directories()
+  testDirs <- .test_directories(...)
 
   # Create temporary directories
   for (d in testDirs$temp) dir.create(d)
@@ -15,11 +68,9 @@ SpaDEStestSetUpDirectories <- function(tempDir = tempdir(), teardownEnv = testth
       "Temporary test directory could not be removed: ", testDirs$temp$root, call. = F)
   }, envir = teardownEnv, priority = "last")
 
-  # Copy module to temporary location
-  .test_copyModule(testDirs$module, destDir = testDirs$temp$modules)
-
-  # Sink output to file
-  if (testthat::is_testing()) withr::local_output_sink(file.path(testDirs$temp$root, "local_output_sink.txt"))
+  # Sink output and messages to file
+  if (localOutputSink)  withr::local_output_sink(file.path(testDirs$temp$root, "local_output_sink.txt"))
+  if (localMessageSink) withr::local_message_sink(file.path(testDirs$temp$root, "local_message_sink.txt"))
 
   # Install "testthat" with dependencies into the R packages directory
   Require::Install("testthat", libPaths = testDirs$temp$libPath, verbose = -2)
@@ -31,21 +82,22 @@ SpaDEStestSetUpDirectories <- function(tempDir = tempdir(), teardownEnv = testth
   testDirs
 }
 
-# Set test paths and temporary directories
-.test_directories <- function(tempDir = tempdir()){
+# Set test directory paths
+.test_directories <- function(testPaths = NULL, tempDir = tempdir()){
 
   testDirs <- list()
 
-  # Set source module location
-  testDirs$module <- ifelse(testthat::is_testing(), dirname(dirname(getwd())), getwd())
+  # Set project root
+  testDirs$package <- normalizePath(testthat::test_path("../.."))
 
-  # Set input data path (must be absolute)
-  ## Could maybe instead use system.file()
-  testDirs$testdata <- file.path(testDirs$module, "tests/testthat", "testdata")
+  # Set custom test paths
+  for (testPath in testPaths){
+    testDirs[[testPath]] <- normalizePath(testthat::test_path(testPath))
+  }
 
   # Set temporary directory paths
   testDirs$temp <- list(
-    root = file.path(tempDir, paste0("testthat-", basename(testDirs$module)))
+    root = file.path(tempDir, paste0("testthat-", basename(testDirs$package)))
   )
   testDirs$temp$inputs   <- file.path(testDirs$temp$root, "inputs")   # For shared inputs
   testDirs$temp$outputs  <- file.path(testDirs$temp$root, "outputs")  # For test outputs
@@ -57,60 +109,37 @@ SpaDEStestSetUpDirectories <- function(tempDir = tempdir(), teardownEnv = testth
   testDirs
 }
 
-# Copy module files
-.test_copyModule <- function(moduleDir, destDir, moduleName = basename(moduleDir)){
 
-  # List module files
-  modFiles <- file.info(list.files(moduleDir, full = TRUE))
-  modFiles$name <- basename(row.names(modFiles))
-  modFiles$path <- row.names(modFiles)
+# SpaDES test: Set local global options
+SpaDEStestLocalOptions <- function(
+    reproducible.verbose          = if (testthat::is_testing()) -2,
+    Require.verbose               = if (testthat::is_testing()) -2,
+    Require.cloneFrom             = if (!testthat::is_testing()) Sys.getenv("R_LIBS_USER"),
+    spades.moduleCodeChecks       = if (testthat::is_testing()) FALSE,
+    spades.moduleDocument         = FALSE,
+    SpaDES.project.updateRprofile = FALSE,
+    teardownEnv                   = testthat::teardown_env()){
 
-  # Create module directory
-  modDir <- file.path(destDir, moduleName)
-  dir.create(modDir)
-
-  # Copy module files
-  copyFiles <- list(
-    files = paste0(basename(moduleDir), ".R"),
-    dirs  = c("R", "data")
+  localOptions <- list(
+    reproducible.verbose          = reproducible.verbose,
+    Require.verbose               = Require.verbose,
+    Require.cloneFrom             = Require.cloneFrom,
+    spades.moduleCodeChecks       = spades.moduleCodeChecks,
+    spades.moduleDocument         = spades.moduleDocument,
+    SpaDES.project.updateRprofile = SpaDES.project.updateRprofile
   )
-  for (f in modFiles$path[!modFiles$isdir & modFiles$name %in% copyFiles$files]){
-    file.copy(f, file.path(modDir, basename(f)))
-  }
-  for (d in modFiles$path[ modFiles$isdir & modFiles$name %in% copyFiles$dirs]){
-    file.copy(d, modDir, recursive = TRUE)
-  }
+
+  withr::local_options(localOptions[!sapply(localOptions, is.null)], .local_envir = teardownEnv)
 }
 
 
-# Set global options
-SpaDEStestLocalOptions <- function(teardownEnv = testthat::teardown_env()){
+# SpaDES test: muffle messages and warnings
+SpaDEStestMuffleConditions <- function(
+    expr, ...,
+    handleConditions = testthat::is_testing(),
+    suppressWarnings = getOption("spades.test.suppressWarnings", default = FALSE)){
 
-  # Set reproducible options:
-  # - Silence messaging
-  if (testthat::is_testing()) withr::local_options(list(reproducible.verbose = -2), .local_envir = teardownEnv)
-
-  # Set Require package options:
-  # - Clone R packages from user library
-  # - Silence messaging
-  withr::local_options(list(Require.cloneFrom = Sys.getenv("R_LIBS_USER")), .local_envir = teardownEnv)
-  if (testthat::is_testing()) withr::local_options(list(Require.verbose = -2), .local_envir = teardownEnv)
-
-  # Set SpaDES.core options:
-  # - Do not rebuild package documentation
-  withr::local_options(list(spades.moduleCodeChecks = FALSE), .local_envir = teardownEnv)
-  withr::local_options(list(spades.moduleDocument   = FALSE), .local_envir = teardownEnv)
-
-  # Set SpaDES.project options:
-  # - Never update R profile
-  withr::local_options(list(SpaDES.project.updateRprofile = FALSE), .local_envir = teardownEnv)
-}
-
-
-# Helper function: muffle messages and warnings
-SpaDEStestMuffleConditions <- function(expr, suppressWarnings = getOption("spades.test.suppressWarnings", default = FALSE), ...){
-
-  if (testthat::is_testing()){
+  if (handleConditions | suppressWarnings){
 
     withCallingHandlers(
       expr,
