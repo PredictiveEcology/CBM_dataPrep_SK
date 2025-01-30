@@ -5,33 +5,30 @@ test_that("Module runs with study AOI", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(testDirs$temp$projects, "2-withAOI")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleConditions(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "2-withAOI"),
+        projectPath = projectPath,
         modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        inputPath   = testDirs$temp$inputs,
+        packagePath = testDirs$temp$libPath
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta"),
+      dbPath     = file.path(testDirs$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(testDirs$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(testDirs$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(testDirs$temp$inputs, "gcMetaEg.csv")),
 
-      masterRaster = terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")),
+      masterRaster = file.path(testDirs$testdata, "masterRaster-withAOI.tif"),
 
       # Test matching user disturbances with CBM-CFS3 disturbances
       userDist = rbind(
@@ -44,14 +41,14 @@ test_that("Module runs with study AOI", {
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleConditions(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleConditions(
     SpaDES.core::spades(simTestInit)
   )
 
