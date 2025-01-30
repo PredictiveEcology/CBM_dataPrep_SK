@@ -12,10 +12,10 @@
   googledrive::drive_auth()
 
 
-## OPTIONAL: SET TEST OPTIONS ----
+## SET TEST OPTIONS ----
 
   # Suppress warnings from calls to setupProject, simInit, and spades
-  options("spadesCBM.test.suppressWarnings" = TRUE)
+  options("spades.test.suppressWarnings" = TRUE)
 
   # Set custom input data location
   options("reproducible.inputPaths" = NULL)
