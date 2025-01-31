@@ -5,11 +5,7 @@
   ## Required because module is not an R package
   install.packages(
     c("testthat", "SpaDES.core", "SpaDES.project", "googledrive"),
-    type = "binary",
     repos = unique(c("predictiveecology.r-universe.dev", getOption("repos"))))
-
-  # Authorize Google Drive
-  googledrive::drive_auth()
 
 
 ## SET TEST OPTIONS ----
