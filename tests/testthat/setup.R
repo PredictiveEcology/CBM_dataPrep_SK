@@ -4,20 +4,18 @@ if (!testthat::is_testing()){
   testthat::source_test_helpers(env = globalenv())
 }
 
-# Set teardown environment
-teardownEnv <- if (testthat::is_testing()) testthat::teardown_env() else parent.frame()
+# Source work in progress SpaDES module testing functions
+tempScript <- tempfile(fileext = ".R")
+download.file(
+  "https://raw.githubusercontent.com/suz-estella/SpaDES.core/refs/heads/suz-testthat/R/testthat.R",
+  tempScript, quiet = TRUE)
+source(tempScript)
 
 # Set up testing directories
-testDirs <- SpaDEStestSetUpDirectories(
-  teardownEnv = teardownEnv,
-  testPaths   = "testdata"
-)
+spadesTestPaths <- SpaDEStestSetUpDirectories()
 
-# Set local global options
-SpaDEStestLocalOptions(teardownEnv = teardownEnv)
-
-# Copy module to temporary test directory
-SpaDEStestCopyModule(testDirs)
+# Set up testing environment
+SpaDEStestSetUpEnvironment()
 
 
 # Authorize Google Drive
@@ -29,7 +27,7 @@ googledrive::drive_auth(path = if (Sys.getenv("GOOGLE_AUTH") != "") Sys.getenv("
 # Download CBM-CFS3 database usually provided by CBM_defaults
 download.file(
   url      = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db",
-  destfile = file.path(testDirs$temp$inputs, "dbPath.db"),
+  destfile = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
   mode     = "wb",
   quiet    = TRUE
 )
@@ -39,6 +37,6 @@ withr::with_options(
   c(googledrive_quiet = TRUE),
   googledrive::drive_download(
     "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ",
-    path = file.path(testDirs$temp$inputs, "gcMetaEg.csv")
+    path = file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")
   ))
 
