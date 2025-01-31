@@ -6,7 +6,7 @@ test_that("Module runs with study AOI", {
   ## Run simInit and spades ----
 
   # Set project path
-  projectPath <- file.path(testDirs$temp$projects, "2-withAOI")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "2-withAOI")
   dir.create(projectPath)
   withr::local_dir(projectPath)
 
@@ -18,17 +18,17 @@ test_that("Module runs with study AOI", {
       modules = "CBM_dataPrep_SK",
       paths   = list(
         projectPath = projectPath,
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs,
-        packagePath = testDirs$temp$libPath
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages
       ),
 
-      dbPath     = file.path(testDirs$temp$inputs, "dbPath.db"),
-      spinupSQL  = readRDS(file.path(testDirs$testdata, "spinupSQL.rds")),
-      species_tr = readRDS(file.path(testDirs$testdata, "species_tr.rds")),
-      gcMeta     = read.csv(file.path(testDirs$temp$inputs, "gcMetaEg.csv")),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
-      masterRaster = file.path(testDirs$testdata, "masterRaster-withAOI.tif"),
+      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
 
       # Test matching user disturbances with CBM-CFS3 disturbances
       userDist = rbind(
@@ -68,7 +68,7 @@ test_that("Module runs with study AOI", {
   expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
 
   # Expect that there is 1 row for every non-NA cell in masterRaster
-  mrValues <- terra::values(terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")))
+  mrValues <- terra::values(terra::rast(file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif")))
   expect_equal(nrow(simTest$spatialDT), sum(!is.na(mrValues[,1])))
   expect_equal(simTest$spatialDT$pixelIndex, which(!is.na(mrValues[,1])))
 
