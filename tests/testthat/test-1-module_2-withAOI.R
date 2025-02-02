@@ -11,7 +11,7 @@ test_that("Module runs with study AOI", {
   withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- SpaDEStestMuffleConditions(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
@@ -41,14 +41,14 @@ test_that("Module runs with study AOI", {
   )
 
   # Run simInit
-  simTestInit <- SpaDEStestMuffleConditions(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- SpaDEStestMuffleConditions(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
