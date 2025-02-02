@@ -356,7 +356,7 @@ Init <- function(sim) {
   ## Create sim$mySpuDmids, sim$historicDMtype, and sim$lastPassDMtype ----
 
   # List disturbances possible within in each spatial unit
-  spuIDs <- unique(sim$level3DT$spatial_unit_id)
+  spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
   listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
 
   if (!suppliedElsewhere("mySpuDmids", sim)){
@@ -385,7 +385,7 @@ Init <- function(sim) {
       ask = askUser)
 
     sim$mySpuDmids <- cbind(
-      userDist[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+      userDistSpu[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
       userDistMatch)
   }
 
