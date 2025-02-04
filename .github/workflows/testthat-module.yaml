@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - development
+      - suz-testthat
   pull_request:
     branches:
       - main
@@ -56,12 +57,12 @@ jobs:
       - name: Run testthat
         run: |
 
-          install.packages("testthat")
-          install.packages(c("SpaDES.core", "SpaDES.project"))
-
           # Authorize Google Drive
           install.packages("googledrive")
           googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTH"))
+
+          install.packages("testthat")
+          install.packages(c("SpaDES.core", "SpaDES.project"))
 
           ## 2025-01-30: on macOS:
           ## R packages failed install via SpaDES.project::setupProject
