@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - development
+      - suz-testthat
   pull_request:
     branches:
       - main
