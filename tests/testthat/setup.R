@@ -18,9 +18,6 @@ SpaDEStestSetGlobalOptions()
 spadesTestPaths <- SpaDEStestSetUpDirectories(copyModule = FALSE)
 
 
-# Authorize Google Drive
-googledrive::drive_auth(path = if (Sys.getenv("GOOGLE_AUTH") != "") Sys.getenv("GOOGLE_AUTH"))
-
 ## Download standard inputs that are usually provided by CBM_defaults or CBM_vol2biomass.
 ## RDS data provided where creation of these outputs is more complex than a simple downloads
 

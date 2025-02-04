@@ -59,7 +59,9 @@ jobs:
           install.packages("testthat")
           install.packages(c("SpaDES.core", "SpaDES.project"))
 
+          # Authorize Google Drive
           install.packages("googledrive")
+          googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTH"))
 
           ## 2025-01-30: on macOS:
           ## R packages failed install via SpaDES.project::setupProject
@@ -75,7 +77,6 @@ jobs:
 
           library(SpaDES.core)
           library(SpaDES.project)
-          options("Require.cloneFrom" = head(.libPaths(), 1))
           testthat::test_dir("tests/testthat")
 
         shell: Rscript {0}
