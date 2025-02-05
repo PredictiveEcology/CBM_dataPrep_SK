@@ -4,7 +4,6 @@ on:
       - main
       - development
       - suz-testthat
-      - suz-testthat-temp
   pull_request:
     branches:
       - main
@@ -68,6 +67,40 @@ jobs:
         run: install.packages("testthat")
         shell: Rscript {0}
 
+      - name: Install module package and other dependencies
+        if: runner.os == 'macOS'
+        run: |
+
+          ## 2025-01-30: on macOS:
+          ## R packages failed install via SpaDES.project::setupProject
+          ## None of the following tries have helped so far
+
+          # pkgs <- SpaDES.core::packages(modules = "[[name]]", paths = "..")[[1]]
+          # Require::Require(pkgs[[1]])
+          # Require::Require(c("PredictiveEcology/LandR@development"), require = FALSE)
+
+          # pkgs <- SpaDES.core::packages(modules = "[[name]]", paths = ".")[[1]]
+          # Require::Require(pkgs)
+          # Require::Require(c("PredictiveEcology/LandR@development"), require = FALSE)
+
+          # reqdPkgs = c(
+          #   "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
+          #   "reproducible" ,
+          #   "PredictiveEcology/CBMutils@development",
+          #   "PredictiveEcology/LandR@development"
+          # )
+          # Require::Require(reqdPkgs, require = FALSE)
+
+          # reqdPkgs = c(
+          #   "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
+          #   "reproducible" ,
+          #   "PredictiveEcology/CBMutils@development",
+          #   "PredictiveEcology/LandR@development"
+          # )
+          # Require::Require(reqdPkgs)
+
+        shell: Rscript {0}
+
       - name: Run testthat
         run: |
 
@@ -76,7 +109,7 @@ jobs:
           googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTH"))
 
           # Run tests
-          testthat::test_dir("tests/testthat")
+          testthat::test_dir("tests/testthat", stop_on_failure = TRUE)
 
         shell: Rscript {0}
 
