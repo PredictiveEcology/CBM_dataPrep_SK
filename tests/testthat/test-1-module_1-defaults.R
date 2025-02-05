@@ -6,27 +6,27 @@ test_that("Module runs with defaults", {
   ## Run simInit and spades ----
 
   # Set project path
-  projectPath <- file.path(testDirs$temp$projects, "1-defaults")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "1-defaults")
   dir.create(projectPath)
   withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- SpaDEStestMuffleConditions(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
         projectPath = projectPath,
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs,
-        packagePath = testDirs$temp$libPath
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages
       ),
 
-      dbPath     = file.path(testDirs$temp$inputs, "dbPath.db"),
-      spinupSQL  = readRDS(file.path(testDirs$testdata, "spinupSQL.rds")),
-      species_tr = readRDS(file.path(testDirs$testdata, "species_tr.rds")),
-      gcMeta     = read.csv(file.path(testDirs$temp$inputs, "gcMetaEg.csv")),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
       # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
       # User input is required to match the default 'userDist' with CBM-CFS3 disturbances
@@ -35,14 +35,14 @@ test_that("Module runs with defaults", {
   )
 
   # Run simInit
-  simTestInit <- SpaDEStestMuffleConditions(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- SpaDEStestMuffleConditions(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
