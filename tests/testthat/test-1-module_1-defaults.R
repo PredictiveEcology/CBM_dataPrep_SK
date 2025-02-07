@@ -5,31 +5,28 @@ test_that("Module runs with defaults", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "1-defaults")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "1-defaults"),
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta"),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
       # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
       # User input is required to match the default 'userDist' with CBM-CFS3 disturbances
@@ -38,14 +35,14 @@ test_that("Module runs with defaults", {
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 

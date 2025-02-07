@@ -5,17 +5,13 @@
   ## Required because module is not an R package
   install.packages(
     c("testthat", "SpaDES.core", "SpaDES.project", "googledrive"),
-    type = "binary",
     repos = unique(c("predictiveecology.r-universe.dev", getOption("repos"))))
 
-  # Authorize Google Drive
-  googledrive::drive_auth()
 
-
-## OPTIONAL: SET TEST OPTIONS ----
+## SET TEST OPTIONS ----
 
   # Suppress warnings from calls to setupProject, simInit, and spades
-  options("spadesCBM.test.suppressWarnings" = TRUE)
+  options("spades.test.suppressWarnings" = TRUE)
 
   # Set custom input data location
   options("reproducible.inputPaths" = NULL)

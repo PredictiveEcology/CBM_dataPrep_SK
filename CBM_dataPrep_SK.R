@@ -283,7 +283,7 @@ Init <- function(sim) {
   setkeyv(sim$allPixDT, "pixelIndex")
 
   # Create sim$spatialDT: Summarize input raster values where masterRaster is not NA
-  spatialDT <- sim$allPixDT[!is.na(terra::values(sim$masterRaster)[,1]),]
+  spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
 
   spatialDT_isNA <- is.na(spatialDT)
   if (any(spatialDT_isNA)){
@@ -345,7 +345,15 @@ Init <- function(sim) {
 
   ## Create sim$speciesPixelGroup ----
 
-  speciesPixelGroup <- sim$gcMeta[sim$species_tr, on = .(species = name)]
+  gcMeta <- sim$gcMeta
+  if (!inherits(gcMeta, "data.table")){
+    gcMeta <- tryCatch(
+      data.table::as.data.table(gcMeta),
+      error = function(e) stop(
+        "'gcMeta' could not be converted to data.table: ", e$message, call. = FALSE))
+  }
+
+  speciesPixelGroup <- gcMeta[sim$species_tr, on = .(species = name)]
   speciesPixelGroup <- speciesPixelGroup[gcids >= 1,]
   speciesPixelGroup <- speciesPixelGroup[,.(gcids, species_id)]
   speciesPixelGroup <- speciesPixelGroup[sim$spatialDT, on = .(gcids=gcids)]
@@ -356,7 +364,7 @@ Init <- function(sim) {
   ## Create sim$mySpuDmids, sim$historicDMtype, and sim$lastPassDMtype ----
 
   # List disturbances possible within in each spatial unit
-  spuIDs <- unique(sim$level3DT$spatial_unit_id)
+  spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
   listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
 
   if (!suppliedElsewhere("mySpuDmids", sim)){
@@ -386,7 +394,7 @@ Init <- function(sim) {
     ) |> Cache()
 
     sim$mySpuDmids <- cbind(
-      userDist[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+      userDistSpu[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
       userDistMatch)
   }
 
@@ -525,6 +533,16 @@ Init <- function(sim) {
       sim$masterRaster <- terra::classify(
         masterRaster, cbind(0, NA)
       ) |> Cache()
+    }
+
+  }else{
+
+    if (!inherits(sim$masterRaster, "SpatRaster")){
+      sim$masterRaster <- tryCatch(
+        terra::rast(sim$masterRaster),
+        error = function(e) stop(
+          "'masterRaster' could not be converted to SpatRaster: ", e$message,
+          call. = FALSE))
     }
   }
 

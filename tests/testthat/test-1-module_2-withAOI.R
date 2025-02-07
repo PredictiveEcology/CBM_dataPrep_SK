@@ -5,33 +5,30 @@ test_that("Module runs with study AOI", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "2-withAOI")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "2-withAOI"),
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta"),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
-      masterRaster = terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")),
+      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
 
       # Test matching user disturbances with CBM-CFS3 disturbances
       userDist = rbind(
@@ -44,14 +41,14 @@ test_that("Module runs with study AOI", {
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
@@ -71,7 +68,7 @@ test_that("Module runs with study AOI", {
   expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
 
   # Expect that there is 1 row for every non-NA cell in masterRaster
-  mrValues <- terra::values(terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")))
+  mrValues <- terra::values(terra::rast(file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif")))
   expect_equal(nrow(simTest$spatialDT), sum(!is.na(mrValues[,1])))
   expect_equal(simTest$spatialDT$pixelIndex, which(!is.na(mrValues[,1])))
 
