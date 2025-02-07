@@ -15,7 +15,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development",
+    "PredictiveEcology/CBMutils@development (>=0.0.7.9016)",
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
