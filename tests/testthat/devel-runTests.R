@@ -4,11 +4,11 @@
   # Install required packages
   ## Required because module is not an R package
   install.packages(
-    c("testthat", "SpaDES.core", "SpaDES.project", "googledrive"),
+    c("testthat", "SpaDES.core", "SpaDES.project"),
     repos = unique(c("predictiveecology.r-universe.dev", getOption("repos"))))
 
 
-## SET TEST OPTIONS ----
+## OPTIONS ----
 
   # Suppress warnings from calls to setupProject, simInit, and spades
   options("spades.test.suppressWarnings" = TRUE)
