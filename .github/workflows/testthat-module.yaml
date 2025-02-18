@@ -15,6 +15,7 @@ jobs:
   testthat-module:
     if: "!contains(github.event.commits[0].message, '[skip-ci]')"
     runs-on: ${{ matrix.config.os }}
+    environment: spadesCBM
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
