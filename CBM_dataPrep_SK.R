@@ -104,12 +104,12 @@ defineModule(sim, list(
       desc = "URL for disturbanceRasters"),
     expectsInput(
       objectName = "userDist", objectClass = "data.table",
-      sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH",
+      sourceURL = "https://drive.google.com/file/d/1ihssRHthoiEh4T60OX8V8CYBliTkXy09",
       desc = paste(
-        "Table defines the values present in the disturbance rasters.",
-        "This will be matched with CBM-CFS3 disturbances to create the 'mySpuDmids' table.",
-        "Required if the user has provided non-default disturbanceRasters",
-        "and the CBM_core input 'mySpuDmids' is not provided elsewhere."),
+        "Table defines the values present in the user provided disturbance rasters.",
+        "The user will be prompted to match these with CBM-CFS3 disturbances",
+        "to create the 'mySpuDmids' table input to CBM_core.",
+        "The default is a table defining the values in the default 'disturbanceRasters'."),
       columns = c(
         rasterID   = "ID links to pixel values in the disturbance rasters",
         wholeStand = "Specifies if the whole stand is disturbed (1 = TRUE; 0 = FALSE)",
@@ -117,7 +117,7 @@ defineModule(sim, list(
       )),
     expectsInput(
       objectName = "userDistURL", objectClass = "character",
-      desc = "URL for userDist"),
+      desc = "URL for userDist")
   ),
 
   outputObjects = bindrows(
@@ -369,6 +369,11 @@ Init <- function(sim) {
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
   listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
+
+  # Check if userDist already has all the required IDs
+  if (all(c("spatial_unit_id", "disturbance_type_id", "disturbance_matrix_id") %in% names(sim$userDist))){
+    sim$mySpuDmids <- sim$userDist
+  }
 
   if (!suppliedElsewhere("mySpuDmids", sim)){
 
@@ -763,7 +768,7 @@ Init <- function(sim) {
         sim$userDist <- prepInputs(
           destinationPath = inputPath(sim),
           url        = extractURL("userDist"),
-          targetFile = "userDist.csv",
+          targetFile = "SK_disturbances.csv",
           fun        = data.table::fread
         )
       }
