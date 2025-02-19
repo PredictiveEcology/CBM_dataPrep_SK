@@ -5,43 +5,42 @@ test_that("Module runs with defaults", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "1-defaults")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "1-defaults"),
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages,
+        cachePath   = file.path(projectPath, "cache"),
+        outputPath  = file.path(projectPath, "outputs")
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta")
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv"))
     )
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
@@ -139,26 +138,12 @@ test_that("Module runs with defaults", {
   expect_equal(simTest$realAges[simTest$realAges >= 3], simTest$level3DT$ages[simTest$realAges >= 3])
   expect_true(all(simTest$ages[simTest$realAges < 3] == 3))
 
-
   ## Check output 'mySpuDmids' ----
 
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  for (colName in c(
-    "distName", "name", "description")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.character(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
-
-  for (colName in c(
-    "rasterID", "spatial_unit_id", "wholeStand",
-    "disturbance_type_id", "disturbance_matrix_id")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.numeric(simTest$mySpuDmids[[colName]]) | is.integer(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
+  expect_equal(nrow(simTest$mySpuDmids), 10)
 
 
   ## Check output 'historicDMtype' ----

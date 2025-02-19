@@ -5,45 +5,52 @@ test_that("Module runs with study AOI", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "2-withAOI")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "2-withAOI"),
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        inputPath   = spadesTestPaths$temp$inputs,
+        packagePath = spadesTestPaths$temp$packages,
+        cachePath   = file.path(projectPath, "cache"),
+        outputPath  = file.path(projectPath, "outputs")
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta"),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
+      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
-      masterRaster = terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif"))
+      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
+
+      # Test matching user disturbances with CBM-CFS3 disturbances
+      userDist = rbind(
+        data.frame(rasterID = 1, wholeStand = 1, distName = "Wildfire"),
+        data.frame(rasterID = 2, wholeStand = 1, distName = "Clearcut harvesting without salvage"),
+        data.frame(rasterID = 3, wholeStand = 0, distName = "Generic 20% mortality"),
+        data.frame(rasterID = 4, wholeStand = 1, distName = "Deforestation")
+      )
     )
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
@@ -63,7 +70,7 @@ test_that("Module runs with study AOI", {
   expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
 
   # Expect that there is 1 row for every non-NA cell in masterRaster
-  mrValues <- terra::values(terra::rast(file.path(testDirs$testdata, "masterRaster-withAOI.tif")))
+  mrValues <- terra::values(terra::rast(file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif")))
   expect_equal(nrow(simTest$spatialDT), sum(!is.na(mrValues[,1])))
   expect_equal(simTest$spatialDT$pixelIndex, which(!is.na(mrValues[,1])))
 
@@ -152,19 +159,46 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  for (colName in c(
-    "distName", "name", "description")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.character(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
-  }
+  expect_equal(nrow(simTest$mySpuDmids), 4)
 
-  for (colName in c(
-    "rasterID", "spatial_unit_id", "wholeStand",
-    "disturbance_type_id", "disturbance_matrix_id")){
-    expect_true(colName %in% names(simTest$mySpuDmids))
-    expect_true(is.numeric(simTest$mySpuDmids[[colName]]) | is.integer(simTest$mySpuDmids[[colName]]))
-    expect_true(all(!is.na(simTest$mySpuDmids[[colName]])))
+  # Check that disturbances have been matched correctly
+  rowsExpect <- rbind(
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 1,
+      wholeStand            = 1,
+      distName              = "Wildfire",
+      disturbance_type_id   = 1,
+      disturbance_matrix_id = 371
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 2,
+      wholeStand            = 1,
+      distName              = "Clearcut harvesting without salvage",
+      disturbance_type_id   = 204,
+      disturbance_matrix_id = 160
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 3,
+      wholeStand            = 0,
+      distName              = "Generic 20% mortality",
+      disturbance_type_id   = 168,
+      disturbance_matrix_id = 91
+    ),
+    data.frame(
+      spatial_unit_id       = 28,
+      rasterID              = 4,
+      wholeStand            = 1,
+      distName              = "Deforestation",
+      disturbance_type_id   = 7,
+      disturbance_matrix_id = 26
+    )
+  )
+
+  for (i in 1:nrow(rowsExpect)){
+    expect_equal(nrow(merge(simTest$mySpuDmids, rowsExpect[i,], by = names(rowsExpect))), 1)
   }
 
 
