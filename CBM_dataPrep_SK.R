@@ -89,20 +89,23 @@ defineModule(sim, list(
         "An output of CBM_defaults.")),
     expectsInput(
       objectName = "disturbanceRasters", objectClass = "character",
-      desc = "Character vector of the disturbance rasters for use in simulations - defaults are the Wulder and White rasters for SK.",
-      sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
-    ),
+      sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
+      desc = paste(
+        "Required input to CBM_core.",
+        "If not specified elsewhere, the default source URL is provided.",
+        "The default is the Wulder and White disturbance rasters for SK covering 1984-2011."
+      )),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
-      desc = "URL for disturbanceRasters"
-    ),
+      desc = "URL for disturbanceRasters"),
     expectsInput(
       objectName = "userDist", objectClass = "data.table",
       sourceURL = "https://docs.google.com/spreadsheets/d/1fOikb83aOuLlFYIn6pjmC7Jydjcy77TH",
       desc = paste(
         "Table defines the values present in the disturbance rasters.",
         "This will be matched with CBM-CFS3 disturbances to create the 'mySpuDmids' table.",
-        "Required if CBM_core input 'mySpuDmids' is not provided elsewhere."),
+        "Required if the user has provided non-default disturbanceRasters",
+        "and the CBM_core input 'mySpuDmids' is not provided elsewhere."),
       columns = c(
         rasterID   = "ID links to pixel values in the disturbance rasters",
         wholeStand = "Specifies if the whole stand is disturbed (1 = TRUE; 0 = FALSE)",
@@ -456,30 +459,14 @@ Init <- function(sim) {
   }
 
   # 2. Disturbance information
-  if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("mySpuDmids", sim)){
+  if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("mySpuDmids", sim)  &
+      suppliedElsewhere("userDistURL", sim)){
 
-    if (suppliedElsewhere("userDistURL", sim) &
-        !identical(sim$userDistURL, extractURL("userDist"))){
-
-      sim$userDist <- prepInputs(
-        destinationPath = inputPath(sim),
-        url = sim$userDistURL,
-        fun = data.table::fread
-      )
-
-    }else{
-
-      if (!suppliedElsewhere("userDistURL", sim, where = "user")) message(
-        "User has not supplied disturbance information ('userDist' or 'userDistURL'). ",
-        "Default for Saskatchewan will be used.")
-
-      sim$userDist <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("userDist"),
-        targetFile = "userDist.csv",
-        fun        = data.table::fread
-      )
-    }
+    sim$userDist <- prepInputs(
+      destinationPath = inputPath(sim),
+      url = sim$userDistURL,
+      fun = data.table::fread
+    )
   }
 
   # 3. CBM admin
@@ -664,6 +651,18 @@ Init <- function(sim) {
       sim$disturbanceRasters <- setNames(
         file.path(inputPath(sim), "disturbance_testArea", paste0("SaskDist_", distYears, ".grd")),
         distYears)
+
+      # Disturbance information
+      if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("userDistURL", sim) &
+          !suppliedElsewhere("mySpuDmids", sim)){
+
+        sim$userDist <- prepInputs(
+          destinationPath = inputPath(sim),
+          url        = extractURL("userDist"),
+          targetFile = "userDist.csv",
+          fun        = data.table::fread
+        )
+      }
     }
   }
 
