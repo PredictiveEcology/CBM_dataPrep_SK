@@ -26,8 +26,9 @@ test_that("Module runs with defaults", {
       ),
 
       dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
-      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
-      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
+      spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
+      species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv")),
       gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
       # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
