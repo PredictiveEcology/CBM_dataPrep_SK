@@ -25,15 +25,15 @@ test_that("Module runs with defaults", {
         outputPath  = file.path(projectPath, "outputs")
       ),
 
+      require = "sf",
+
       dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
+      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
+      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
       dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
       spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
       species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv")),
-      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
-
-      # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
-      # User input is required to match the default 'userDist' with CBM-CFS3 disturbances
-      mySpuDmids = "skip_reading_default_userDist"
+      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv"))
     )
   )
 
@@ -142,6 +142,13 @@ test_that("Module runs with defaults", {
   # Check that the real ages match the original ages where <3 now equals 3
   expect_equal(simTest$realAges[simTest$realAges >= 3], simTest$level3DT$ages[simTest$realAges >= 3])
   expect_true(all(simTest$ages[simTest$realAges < 3] == 3))
+
+  ## Check output 'mySpuDmids' ----
+
+  expect_true(!is.null(simTest$mySpuDmids))
+  expect_true(inherits(simTest$mySpuDmids, "data.table"))
+
+  expect_equal(nrow(simTest$mySpuDmids), 10)
 
 
   ## Check output 'historicDMtype' ----
