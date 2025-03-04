@@ -401,9 +401,12 @@ Init <- function(sim) {
     }
 
     # Match user disturbances with CBM-CFS3 disturbance matrices
-    userDistSpu <- do.call(rbind, lapply(spuIDs, function(spuID){
-      cbind(spatial_unit_id = spuID, userDist)
-    }))
+    userDistSpu <- userDist
+    if (!"spatial_unit_id" %in% names(userDistSpu)){
+      userDistSpu <- do.call(rbind, lapply(spuIDs, function(spuID){
+        cbind(spatial_unit_id = spuID, userDistSpu)
+      }))
+    }
 
     askUser <- interactive() & !identical(Sys.getenv("TESTTHAT"), "true")
     if (askUser) message(
