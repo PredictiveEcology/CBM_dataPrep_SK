@@ -13,9 +13,9 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("CBM_dataPrep_SK.Rmd"),
   reqdPkgs = list(
-    "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
+    "data.table", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development (>=0.0.7.9016)",
+    "PredictiveEcology/CBMutils@development (>=0.0.7.9017)",
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
@@ -24,8 +24,10 @@ defineModule(sim, list(
   ),
 
   inputObjects = bindrows(
-    expectsInput(objectName = "dbPath", objectClass = "character", desc = NA,
-                 sourceURL = NA), # FROM DEFAULTS
+    expectsInput(
+      objectName = "dbPath", objectClass = "character", desc = NA, sourceURL = NA), # FROM DEFAULTS
+    expectsInput(
+      objectName = "dMatrixAssociation", objectClass = "data.frame", desc = NA, sourceURL = NA), # FROM DEFAULTS
     expectsInput(
       objectName = "spinupSQL", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
     expectsInput(
@@ -48,14 +50,6 @@ defineModule(sim, list(
     expectsInput(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
-    expectsInput(
-      objectName = "cbmAdmin", objectClass = "data.frame",
-      desc = paste("Provides equivalent between provincial boundaries,",
-                   "CBM-id for provincial boundaries and CBM-spatial unit ids. This is used in the CBM_vol2biomass module"),
-      sourceURL = "https://drive.google.com/file/d/1xdQt9JB5KRIw72uaN5m3iOk8e34t9dyz"),
-    expectsInput(
-      objectName = "cbmAdminURL", objectClass = "character",
-      desc = "URL for cbmAdmin"),
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster has NAs where there are no species and the pixel groupID where the pixels were simulated. It is used to map results",
@@ -299,7 +293,7 @@ Init <- function(sim) {
   if (any(spatialDT_isNA)){
     for (i in 1:length(pgCols)){
       if (any(spatialDT_isNA[, names(pgCols)[[i]]])) warning(
-        "Pixels have been excluded from the simulation where there are no values in",
+        "Pixels have been excluded from the simulation where there are no values in ",
         shQuote(pgCols[[i]]))
     }
     spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
@@ -375,7 +369,11 @@ Init <- function(sim) {
 
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
-  listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
+  listDist <- CBMutils::spuDist(
+    spuIDs = spuIDs,
+    dbPath = sim$dbPath,
+    disturbance_matrix_association = sim$dMatrixAssociation
+  )
 
   # Check if userDist already has all the required IDs
   if (all(c("spatial_unit_id", "disturbance_type_id", "disturbance_matrix_id") %in% names(sim$userDist))){
@@ -401,22 +399,25 @@ Init <- function(sim) {
 
     askUser <- interactive() & !identical(Sys.getenv("TESTTHAT"), "true")
     if (askUser) message(
-      "Prompting user to match input disturbances with CBM-CFS3 disturbance matrix IDs:")
+      "Prompting user to match input disturbances with CBM-CFS3 disturbances:")
 
-    userDistMatch <- CBMutils::spuDistMatch(
-      userDistSpu, listDist = listDist,
-      ask = askUser
-    ) |> Cache()
+    sim$mySpuDmids <- do.call(rbind, lapply(1:nrow(userDistSpu), function(i){
 
-    sim$mySpuDmids <- cbind(
-      userDistSpu[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
-      userDistMatch)
+      userDistMatch <- CBMutils::spuDistMatch(
+        userDistSpu[i,], listDist = listDist,
+        ask = askUser
+      ) |> Cache()
+
+      cbind(
+        userDistSpu[i, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+        userDistMatch)
+    }))
   }
 
   # Set sim$historicDMtype to be wildfire
   sim$historicDMtype <- data.table::merge.data.table(
     sim$level3DT,
-    subset(listDist, tolower(name) == "wildfire"),
+    unique(subset(listDist[, .(spatial_unit_id, disturbance_type_id, name)], tolower(name) == "wildfire")),
     by = "spatial_unit_id"
   )$disturbance_type_id
 
@@ -472,33 +473,6 @@ Init <- function(sim) {
       url = sim$userDistURL,
       fun = data.table::fread
     )
-  }
-
-  # 3. CBM admin
-  if (!suppliedElsewhere("cbmAdmin", sim)){
-
-    if (suppliedElsewhere("cbmAdminURL", sim) &
-        !identical(sim$cbmAdminURL, extractURL("cbmAdmin"))){
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url = sim$cbmAdminURL,
-        fun = data.table::fread
-      )
-
-    }else{
-
-      if (!suppliedElsewhere("cbmAdminURL", sim, where = "user")) message(
-        "User has not supplied CBM admin ('cbmAdmin' or 'cbmAdminURL'). ",
-        "Default for Canada will be used.")
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("cbmAdmin"),
-        targetFile = "cbmAdmin.csv",
-        fun        = data.table::fread
-      )
-    }
   }
 
 
