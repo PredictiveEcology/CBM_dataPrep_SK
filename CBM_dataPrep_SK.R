@@ -368,7 +368,7 @@ Init <- function(sim) {
 
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
-  listDist <- CBMutils::spuDist(spuIDs, sim$dbPath)
+  listDist <- CBMutils::spuDist(spuIDs = spuIDs, dbPath = sim$dbPath)
 
   # Check if userDist already has all the required IDs
   if (all(c("spatial_unit_id", "disturbance_type_id", "disturbance_matrix_id") %in% names(sim$userDist))){
