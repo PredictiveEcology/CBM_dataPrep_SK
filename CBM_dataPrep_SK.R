@@ -51,14 +51,6 @@ defineModule(sim, list(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
     expectsInput(
-      objectName = "cbmAdmin", objectClass = "data.frame",
-      desc = paste("Provides equivalent between provincial boundaries,",
-                   "CBM-id for provincial boundaries and CBM-spatial unit ids. This is used in the CBM_vol2biomass module"),
-      sourceURL = "https://drive.google.com/file/d/1xdQt9JB5KRIw72uaN5m3iOk8e34t9dyz"),
-    expectsInput(
-      objectName = "cbmAdminURL", objectClass = "character",
-      desc = "URL for cbmAdmin"),
-    expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster has NAs where there are no species and the pixel groupID where the pixels were simulated. It is used to map results",
       sourceURL = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW"),
@@ -102,7 +94,7 @@ defineModule(sim, list(
       desc = "URL for disturbanceRasters"),
     expectsInput(
       objectName = "userDist", objectClass = "data.table",
-      sourceURL = "https://drive.google.com/file/d/1ihssRHthoiEh4T60OX8V8CYBliTkXy09",
+      sourceURL = "https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ",
       desc = paste(
         "Table defines the values present in the user provided disturbance rasters.",
         "The user will be prompted to match these with CBM-CFS3 disturbances",
@@ -484,33 +476,6 @@ Init <- function(sim) {
       url = sim$userDistURL,
       fun = data.table::fread
     )
-  }
-
-  # 3. CBM admin
-  if (!suppliedElsewhere("cbmAdmin", sim)){
-
-    if (suppliedElsewhere("cbmAdminURL", sim) &
-        !identical(sim$cbmAdminURL, extractURL("cbmAdmin"))){
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url = sim$cbmAdminURL,
-        fun = data.table::fread
-      )
-
-    }else{
-
-      if (!suppliedElsewhere("cbmAdminURL", sim, where = "user")) message(
-        "User has not supplied CBM admin ('cbmAdmin' or 'cbmAdminURL'). ",
-        "Default for Canada will be used.")
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("cbmAdmin"),
-        targetFile = "cbmAdmin.csv",
-        fun        = data.table::fread
-      )
-    }
   }
 
 
