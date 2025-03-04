@@ -19,9 +19,9 @@ test_that("Module runs with defaults", {
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
-        inputPath   = spadesTestPaths$temp$inputs,
         packagePath = spadesTestPaths$temp$packages,
-        cachePath   = file.path(projectPath, "cache"),
+        inputPath   = spadesTestPaths$temp$inputs,
+        cachePath   = spadesTestPaths$temp$cache,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
@@ -148,7 +148,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  expect_equal(nrow(simTest$mySpuDmids), 10)
+  expect_equal(nrow(simTest$mySpuDmids), 20)
 
 
   ## Check output 'historicDMtype' ----
