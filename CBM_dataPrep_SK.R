@@ -301,7 +301,7 @@ Init <- function(sim) {
   if (any(spatialDT_isNA)){
     for (i in 1:length(pgCols)){
       if (any(spatialDT_isNA[, names(pgCols)[[i]]])) warning(
-        "Pixels have been excluded from the simulation where there are no values in",
+        "Pixels have been excluded from the simulation where there are no values in ",
         shQuote(pgCols[[i]]))
     }
     spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
