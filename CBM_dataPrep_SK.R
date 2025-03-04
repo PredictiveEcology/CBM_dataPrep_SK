@@ -94,7 +94,7 @@ defineModule(sim, list(
       desc = "URL for disturbanceRasters"),
     expectsInput(
       objectName = "userDist", objectClass = "data.table",
-      sourceURL = "https://drive.google.com/file/d/1ihssRHthoiEh4T60OX8V8CYBliTkXy09",
+      sourceURL = "https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ",
       desc = paste(
         "Table defines the values present in the user provided disturbance rasters.",
         "The user will be prompted to match these with CBM-CFS3 disturbances",

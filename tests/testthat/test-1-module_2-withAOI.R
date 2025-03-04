@@ -19,9 +19,9 @@ test_that("Module runs with study AOI", {
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
-        inputPath   = spadesTestPaths$temp$inputs,
         packagePath = spadesTestPaths$temp$packages,
-        cachePath   = file.path(projectPath, "cache"),
+        inputPath   = spadesTestPaths$temp$inputs,
+        cachePath   = spadesTestPaths$temp$cache,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
