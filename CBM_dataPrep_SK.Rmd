@@ -2,8 +2,8 @@
 title: "CBM_dataPrep_SK"
 author:
   - Celine Boisvenue
-  - Alex Chubaty
-date: "September 2021"
+  - Camille Giuliano
+date: "March 2025"
 output:
   html_document:
     keep_md: yes
@@ -18,6 +18,8 @@ editor_options:
 
 
 ## Overview
+
+[SpaDES](https://SpaDES.PredictiveEcology.org) was designed for spatially explicit modelling and provides a wide variety of tools to support it. [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) is where the processing of the spatially explicit inputs to [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) happens. This also makes [CBM_dataPrep](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) the most idiosyncratic module of the [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) as it processes study area and scenario specific data. As our default example, we simulate the managed forests of Saskatchewan (study area), from 1985 to 2011, with disturbances as described in @boisvenue2016 (scenario is the time horizon and the type of disturbances).
 
 ## List of input objects
 
@@ -34,6 +36,8 @@ editor_options:
 
 
 ## Module flow (rename this section later)
+
+The user needs to provide study-area specific information, the study area location (e.g., a raster or shapefile), 
 
 1.  
 
@@ -163,6 +167,6 @@ knitr::kable(df_outputs)
 
 ## Links to other modules
 
--   [`CBM_core`](https://github.com/PredictiveEcology/CBM_core)
--   [`CBM_defaults`](https://github.com/PredictiveEcology/CBM_defaults)
--   [`CBM_vol2biomass`](https://github.com/PredictiveEcology/CBM_vol2biomass)
+-   [CBM_core](https://github.com/PredictiveEcology/CBM_core)
+-   [CBM_defaults](https://github.com/PredictiveEcology/CBM_defaults)
+-   [CBM_vol2biomass](https://github.com/PredictiveEcology/CBM_vol2biomass)
