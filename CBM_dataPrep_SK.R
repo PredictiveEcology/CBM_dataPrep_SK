@@ -25,11 +25,16 @@ defineModule(sim, list(
 
   inputObjects = bindrows(
     expectsInput(
-      objectName = "dbPath", objectClass = "character", desc = NA, sourceURL = NA), # FROM DEFAULTS
+      objectName = "dbPath", objectClass = "character",
+      desc = "Path to the CBM defaults databse",
+      sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db"), # FROM DEFAULTS
     expectsInput(
-      objectName = "dMatrixAssociation", objectClass = "data.frame", desc = NA, sourceURL = NA), # FROM DEFAULTS
+      objectName = "dMatrixAssociation", objectClass = "data.frame",
+      desc = "Disturbance table matching different disturbance IDs",
+      sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_exn/disturbance_matrix_association.csv"), # FROM DEFAULTS
     expectsInput(
-      objectName = "spinupSQL", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
+      objectName = "spinupSQL", objectClass = "dataset",
+      desc = "Table containing many necesary spinup parameters", sourceURL = NA), # FROM DEFAULTS
     expectsInput(
       objectName = "species_tr", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
     expectsInput(
