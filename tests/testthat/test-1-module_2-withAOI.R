@@ -19,15 +19,20 @@ test_that("Module runs with study AOI", {
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
-        inputPath   = spadesTestPaths$temp$inputs,
         packagePath = spadesTestPaths$temp$packages,
-        cachePath   = file.path(projectPath, "cache"),
+        inputPath   = spadesTestPaths$temp$inputs,
+        cachePath   = spadesTestPaths$temp$cache,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
-      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
-      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
-      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      require = "sf",
+
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "cbm_defaults_v1.2.8340.362.db"),
+      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
+      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
+      dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
+      spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
+      species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv")),
       gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
       masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
@@ -159,7 +164,7 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  expect_equal(nrow(simTest$mySpuDmids), 4)
+  expect_equal(nrow(simTest$mySpuDmids), 8)
 
   # Check that disturbances have been matched correctly
   rowsExpect <- rbind(
@@ -167,33 +172,37 @@ test_that("Module runs with study AOI", {
       spatial_unit_id       = 28,
       rasterID              = 1,
       wholeStand            = 1,
+      sw_hw                 = c("sw", "hw"),
       distName              = "Wildfire",
       disturbance_type_id   = 1,
-      disturbance_matrix_id = 371
+      disturbance_matrix_id = c(371, 851)
     ),
     data.frame(
       spatial_unit_id       = 28,
       rasterID              = 2,
       wholeStand            = 1,
+      sw_hw                 = c("sw", "hw"),
       distName              = "Clearcut harvesting without salvage",
       disturbance_type_id   = 204,
-      disturbance_matrix_id = 160
+      disturbance_matrix_id = c(160, 640)
     ),
     data.frame(
       spatial_unit_id       = 28,
       rasterID              = 3,
       wholeStand            = 0,
+      sw_hw                 = c("sw", "hw"),
       distName              = "Generic 20% mortality",
       disturbance_type_id   = 168,
-      disturbance_matrix_id = 91
+      disturbance_matrix_id = c(91, 571)
     ),
     data.frame(
       spatial_unit_id       = 28,
       rasterID              = 4,
       wholeStand            = 1,
+      sw_hw                 = c("sw", "hw"),
       distName              = "Deforestation",
       disturbance_type_id   = 7,
-      disturbance_matrix_id = 26
+      disturbance_matrix_id = c(26, 506)
     )
   )
 

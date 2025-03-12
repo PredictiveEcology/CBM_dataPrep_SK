@@ -13,8 +13,11 @@
   # Suppress warnings from calls to setupProject, simInit, and spades
   options("spades.test.suppressWarnings" = TRUE)
 
-  # Set custom input data location
-  options("reproducible.inputPaths" = NULL)
+  # Set custom directory paths
+  ## Speed up tests by allowing inputs, cache, and R packages to persist between runs
+  options("spades.test.paths.inputs"   = NULL) # inputPath
+  options("spades.test.paths.cache"    = NULL) # cachePath
+  options("spades.test.paths.packages" = NULL) # packagePath
 
 
 ## RUN ALL TESTS ----

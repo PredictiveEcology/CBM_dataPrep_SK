@@ -19,15 +19,20 @@ test_that("Module runs with defaults", {
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
-        inputPath   = spadesTestPaths$temp$inputs,
         packagePath = spadesTestPaths$temp$packages,
-        cachePath   = file.path(projectPath, "cache"),
+        inputPath   = spadesTestPaths$temp$inputs,
+        cachePath   = spadesTestPaths$temp$cache,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
-      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
-      spinupSQL  = readRDS(file.path(spadesTestPaths$testdata, "spinupSQL.rds")),
-      species_tr = readRDS(file.path(spadesTestPaths$testdata, "species_tr.rds")),
+      require = "sf",
+
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "cbm_defaults_v1.2.8340.362.db"),
+      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
+      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
+      dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
+      spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
+      species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv")),
       gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv"))
     )
   )
@@ -143,7 +148,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$mySpuDmids))
   expect_true(inherits(simTest$mySpuDmids, "data.table"))
 
-  expect_equal(nrow(simTest$mySpuDmids), 10)
+  expect_equal(nrow(simTest$mySpuDmids), 20)
 
 
   ## Check output 'historicDMtype' ----
