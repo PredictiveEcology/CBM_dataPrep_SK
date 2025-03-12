@@ -13,9 +13,9 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("CBM_dataPrep_SK.Rmd"),
   reqdPkgs = list(
-    "data.table", "fasterize", "magrittr", "RSQLite", "sf", "terra",
+    "data.table", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development (>=0.0.7.9016)",
+    "PredictiveEcology/CBMutils@development (>=0.0.7.9017)",
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
@@ -24,10 +24,17 @@ defineModule(sim, list(
   ),
 
   inputObjects = bindrows(
-    expectsInput(objectName = "dbPath", objectClass = "character", desc = NA,
-                 sourceURL = NA), # FROM DEFAULTS
     expectsInput(
-      objectName = "spinupSQL", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
+      objectName = "dbPath", objectClass = "character",
+      desc = "Path to the CBM defaults databse",
+      sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db"), # FROM DEFAULTS
+    expectsInput(
+      objectName = "dMatrixAssociation", objectClass = "data.frame",
+      desc = "Disturbance table matching different disturbance IDs",
+      sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_exn/disturbance_matrix_association.csv"), # FROM DEFAULTS
+    expectsInput(
+      objectName = "spinupSQL", objectClass = "dataset",
+      desc = "Table containing many necesary spinup parameters", sourceURL = NA), # FROM DEFAULTS
     expectsInput(
       objectName = "species_tr", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
     expectsInput(
@@ -48,14 +55,6 @@ defineModule(sim, list(
     expectsInput(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
-    expectsInput(
-      objectName = "cbmAdmin", objectClass = "data.frame",
-      desc = paste("Provides equivalent between provincial boundaries,",
-                   "CBM-id for provincial boundaries and CBM-spatial unit ids. This is used in the CBM_vol2biomass module"),
-      sourceURL = "https://drive.google.com/file/d/1xdQt9JB5KRIw72uaN5m3iOk8e34t9dyz"),
-    expectsInput(
-      objectName = "cbmAdminURL", objectClass = "character",
-      desc = "URL for cbmAdmin"),
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster has NAs where there are no species and the pixel groupID where the pixels were simulated. It is used to map results",
@@ -78,19 +77,15 @@ defineModule(sim, list(
       objectName = "gcIndexRasterURL", objectClass = "character",
       desc = "URL for gcIndexRaste - optional, need this or a ageRaster"),
     expectsInput(
-      objectName = "spuRaster", objectClass = "SpatRaster",
-      desc = "Raster has spatial units for each pixel",
-      sourceURL = "https://drive.google.com/file/d/1D3O0Uj-s_QEgMW7_X-NhVsEZdJ29FBed"),
+      objectName = "spuLocator", objectClass = "sf|SpatRaster",
+      desc = paste(
+        "Spatial data source from which spatial unit IDs can be extracted.",
+        "An output of CBM_defaults.")),
     expectsInput(
-      objectName = "spuRasterURL", objectClass = "character",
-      desc = "URL for spuRaster"),
-    expectsInput(
-      objectName = "ecoRaster", objectClass = "SpatRaster",
-      desc = "Raster has ecozones for each pixel",
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip"),
-    expectsInput(
-      objectName = "ecoRasterURL", objectClass = "character",
-      desc = "URL for ecoRaster"),
+      objectName = "ecoLocator", objectClass = "sf|SpatRaster",
+      desc = paste(
+        "Spatial data source from which ecozone IDs extracted.",
+        "An output of CBM_defaults.")),
     expectsInput(
       objectName = "disturbanceRasters", objectClass = "character",
       sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
@@ -104,7 +99,7 @@ defineModule(sim, list(
       desc = "URL for disturbanceRasters"),
     expectsInput(
       objectName = "userDist", objectClass = "data.table",
-      sourceURL = "https://drive.google.com/file/d/1ihssRHthoiEh4T60OX8V8CYBliTkXy09",
+      sourceURL = "https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ",
       desc = paste(
         "Table defines the values present in the user provided disturbance rasters.",
         "The user will be prompted to match these with CBM-CFS3 disturbances",
@@ -127,7 +122,7 @@ defineModule(sim, list(
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
         ages            = "Stand ages extracted from input 'ageRaster'",
-        spatial_unit_id = "Spatial unit IDs extracted from input 'spuRaster'",
+        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
@@ -140,7 +135,7 @@ defineModule(sim, list(
         pixelIndex      = "'masterRaster' cell index",
         pixelGroup      = "Pixel group ID",
         ages            = "Stand ages extracted from input 'ageRaster'",
-        spatial_unit_id = "Spatial unit IDs extracted from input 'spuRaster'",
+        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
@@ -152,7 +147,7 @@ defineModule(sim, list(
       columns = c(
         pixelGroup      = "Pixel group ID",
         ages            = "Stand ages extracted from input 'ageRaster' modified such that all ages are >=3",
-        spatial_unit_id = "Spatial unit IDs extracted from input 'spuRaster'",
+        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Factor of growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
@@ -225,10 +220,7 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
     init = {
-
-      # Initialize module
       sim <- Init(sim)
-
     },
     warning(noEventWarning(sim))
   )
@@ -239,22 +231,23 @@ Init <- function(sim) {
 
   ## Create sim$allPixDT and sim$spatialDT ----
 
-  # Set which pixel group columns are assigned from input rasters
+  # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
-    "ages"            = "ageRaster",
-    "spatial_unit_id" = "spuRaster",
-    "gcids"           = "gcIndexRaster",
-    "ecozones"        = "ecoRaster"
+    ages            = "ageRaster",
+    gcids           = "gcIndexRaster",
+    ecozones        = "ecoLocator",
+    spatial_unit_id = "spuLocator"
   )
 
-  # Check input rasters
+  # Read spatial inputs
   inRast <- list()
   for (rName in c("masterRaster", pgCols)){
-
     inRast[[rName]] <- sim[[rName]]
+    if (is.null(inRast[[rName]])) stop(shQuote(rName), " input not found")
+  }
 
-    if (is.null(inRast[[rName]])) stop(shQuote(rName), " input raster missing")
-
+  ## Convert masterRaster to SpatRaster
+  for (rName in "masterRaster"){
     if (!inherits(inRast[[rName]], "SpatRaster")){
       inRast[[rName]] <- tryCatch(
         terra::rast(inRast[[rName]]),
@@ -262,21 +255,34 @@ Init <- function(sim) {
           shQuote(rName), " could not be converted to SpatRaster: ", e$message,
           call. = FALSE))
     }
-
-    if (rName %in% pgCols && (
-      terra::ncol(inRast[[rName]]) != terra::ncol(inRast$masterRaster) ||
-      terra::nrow(inRast[[rName]]) != terra::nrow(inRast$masterRaster) ||
-      !all(abs(c(
-        terra::res(inRast[[rName]]) - terra::res(inRast$masterRaster),
-        terra::ext(inRast[[rName]])$xmin - terra::ext(inRast$masterRaster)$xmin,
-        terra::ext(inRast[[rName]])$xmax - terra::ext(inRast$masterRaster)$xmax,
-        terra::ext(inRast[[rName]])$ymin - terra::ext(inRast$masterRaster)$ymin,
-        terra::ext(inRast[[rName]])$ymax - terra::ext(inRast$masterRaster)$ymax
-      )) < 0.01)
-    )) stop(shQuote(rName), " does not align with ", shQuote("masterRaster"))
   }
 
-  # Create sim$allPixDT: Summarize input raster values into table
+  ## Convert spatial inputs to SpatRaster and align with masterRaster
+  for (rName in pgCols){
+
+    if (inherits(inRast[[rName]], "sf")){
+
+      inRast[[rName]] <- terra::rasterize(
+        postProcess(
+          inRast[[rName]],
+          cropTo    = inRast$masterRaster,
+          projectTo = inRast$masterRaster
+        ) |> Cache(),
+        inRast$masterRaster,
+        field = names(inRast[[rName]])[[1]]
+      )
+
+    }else{
+
+      inRast[[rName]] <- postProcess(
+        inRast[[rName]],
+        to     = inRast$masterRaster,
+        method = "near"
+      ) |> Cache()
+    }
+  }
+
+  # Create sim$allPixDT: Summarize input values into table
   sim$allPixDT <- data.table::data.table(
     pixelIndex = 1:terra::ncell(inRast$masterRaster)
   )
@@ -291,9 +297,9 @@ Init <- function(sim) {
   spatialDT_isNA <- is.na(spatialDT)
   if (any(spatialDT_isNA)){
     for (i in 1:length(pgCols)){
-      if (any(spatialDT_isNA[[names(pgCols)[[i]]]])) warning(
-        "Pixels have had to be excluded from the simulation where ",
-        shQuote(pgCols[[i]]), " contains NAs")
+      if (any(spatialDT_isNA[, names(pgCols)[[i]]])) warning(
+        "Pixels have been excluded from the simulation where there are no values in ",
+        shQuote(pgCols[[i]]))
     }
     spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
   }
@@ -368,7 +374,11 @@ Init <- function(sim) {
 
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
-  listDist <- CBMutils::spuDist(spuIDs = spuIDs, dbPath = sim$dbPath)
+  listDist <- CBMutils::spuDist(
+    spuIDs = spuIDs,
+    dbPath = sim$dbPath,
+    disturbance_matrix_association = sim$dMatrixAssociation
+  )
 
   # Check if userDist already has all the required IDs
   if (all(c("spatial_unit_id", "disturbance_type_id", "disturbance_matrix_id") %in% names(sim$userDist))){
@@ -394,22 +404,25 @@ Init <- function(sim) {
 
     askUser <- interactive() & !identical(Sys.getenv("TESTTHAT"), "true")
     if (askUser) message(
-      "Prompting user to match input disturbances with CBM-CFS3 disturbance matrix IDs:")
+      "Prompting user to match input disturbances with CBM-CFS3 disturbances:")
 
-    userDistMatch <- CBMutils::spuDistMatch(
-      userDistSpu, listDist = listDist,
-      ask = askUser
-    ) |> Cache()
+    sim$mySpuDmids <- do.call(rbind, lapply(1:nrow(userDistSpu), function(i){
 
-    sim$mySpuDmids <- cbind(
-      userDistSpu[, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
-      userDistMatch)
+      userDistMatch <- CBMutils::spuDistMatch(
+        userDistSpu[i,], listDist = listDist,
+        ask = askUser
+      ) |> Cache()
+
+      cbind(
+        userDistSpu[i, setdiff(names(userDist), names(userDistMatch)), with = FALSE],
+        userDistMatch)
+    }))
   }
 
   # Set sim$historicDMtype to be wildfire
   sim$historicDMtype <- data.table::merge.data.table(
     sim$level3DT,
-    subset(listDist, tolower(name) == "wildfire"),
+    unique(subset(listDist[, .(spatial_unit_id, disturbance_type_id, name)], tolower(name) == "wildfire")),
     by = "spatial_unit_id"
   )$disturbance_type_id
 
@@ -467,33 +480,6 @@ Init <- function(sim) {
     )
   }
 
-  # 3. CBM admin
-  if (!suppliedElsewhere("cbmAdmin", sim)){
-
-    if (suppliedElsewhere("cbmAdminURL", sim) &
-        !identical(sim$cbmAdminURL, extractURL("cbmAdmin"))){
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url = sim$cbmAdminURL,
-        fun = data.table::fread
-      )
-
-    }else{
-
-      if (!suppliedElsewhere("cbmAdminURL", sim, where = "user")) message(
-        "User has not supplied CBM admin ('cbmAdmin' or 'cbmAdminURL'). ",
-        "Default for Canada will be used.")
-
-      sim$cbmAdmin <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("cbmAdmin"),
-        targetFile = "cbmAdmin.csv",
-        fun        = data.table::fread
-      )
-    }
-  }
-
 
   ## Spatial inputs ----
 
@@ -505,9 +491,8 @@ Init <- function(sim) {
 
       sim$masterRaster <- prepInputs(
         destinationPath = inputPath(sim),
-        url = sim$masterRasterURL,
-        fun = terra::rast
-      ) |> Cache()
+        url = sim$masterRasterURL
+      )
 
     }else{
 
@@ -526,16 +511,6 @@ Init <- function(sim) {
         masterRaster, cbind(0, NA)
       ) |> Cache()
     }
-
-  }else{
-
-    if (!inherits(sim$masterRaster, "SpatRaster")){
-      sim$masterRaster <- tryCatch(
-        terra::rast(sim$masterRaster),
-        error = function(e) stop(
-          "'masterRaster' could not be converted to SpatRaster: ", e$message,
-          call. = FALSE))
-    }
   }
 
   # 2. Age raster
@@ -546,11 +521,8 @@ Init <- function(sim) {
 
       sim$ageRaster <- prepInputs(
         destinationPath = inputPath(sim),
-        url    = sim$ageRasterURL,
-        fun    = terra::rast,
-        to     = sim$masterRaster,
-        method = "near"
-      ) |> Cache()
+        url = sim$ageRasterURL
+      )
 
     }else{
 
@@ -562,9 +534,7 @@ Init <- function(sim) {
         destinationPath = inputPath(sim),
         url        = extractURL("ageRaster"),
         targetFile = "age_TestArea.tif",
-        fun        = terra::rast,
-        to         = sim$masterRaster,
-        method     = "near"
+        fun        = terra::rast
       ) |> Cache()
     }
   }
@@ -577,11 +547,8 @@ Init <- function(sim) {
 
       sim$gcIndexRaster <- prepInputs(
         destinationPath = inputPath(sim),
-        url    = sim$gcIndexRasterURL,
-        fun    = terra::rast,
-        to     = sim$masterRaster,
-        method = "near"
-      ) |> Cache()
+        url = sim$gcIndexRasterURL
+      )
 
     }else{
 
@@ -593,99 +560,7 @@ Init <- function(sim) {
         destinationPath = inputPath(sim),
         url        = extractURL("gcIndexRaster"),
         targetFile = "gcIndex.tif",
-        fun        = terra::rast,
-        to         = sim$masterRaster,
-        method     = "near"
-      ) |> Cache()
-    }
-  }
-
-  # 4. Spatial units raster
-  if (!suppliedElsewhere("spuRaster", sim)){
-
-    if (suppliedElsewhere("spuRasterURL", sim) &
-        !identical(sim$spuRasterURL, extractURL("spuRaster"))){
-
-      sim$spuRaster <- prepInputs(
-        destinationPath = inputPath(sim),
-        url    = sim$spuRasterURL,
-        fun    = terra::rast,
-        to     = sim$masterRaster,
-        method = "near"
-      ) |> Cache()
-
-    }else{
-
-      if (!suppliedElsewhere("spuRasterURL", sim, where = "user")) message(
-        "User has not supplied a spatial units raster ('spuRaster' or 'spuRasterURL'). ",
-        "Default for Canada will be used.")
-
-      spuSF <- prepInputs(
-        destinationPath = inputPath(sim),
-        url         = extractURL("spuRaster"),
-        filename1   = "spUnit_Locator.zip",
-        targetFile  = "spUnit_Locator.shp",
-        alsoExtract = "similar",
-        fun         = sf::st_read(targetFile, quiet = TRUE),
-        projectTo   = sim$masterRaster,
-        cropTo      = sim$masterRaster
-      ) |> Cache()
-
-      sim$spuRaster <- terra::rasterize(
-        terra::vect(spuSF),
-        sim$masterRaster,
-        field = "spu_id"
-      ) |> Cache()
-    }
-  }
-
-  # 5. Ecozones raster
-  if (!suppliedElsewhere("ecoRaster", sim)){
-
-    if (suppliedElsewhere("ecoRasterURL", sim) &
-        !identical(sim$ecoRasterURL, extractURL("ecoRaster"))){
-
-      sim$ecoRaster <- prepInputs(
-        destinationPath = inputPath(sim),
-        url    = sim$ecoRasterURL,
-        fun    = terra::rast,
-        to     = sim$masterRaster,
-        method = "near"
-      ) |> Cache()
-
-    }else{
-
-      if (!suppliedElsewhere("ecoRasterURL", sim, where = "user")) message(
-        "User has not supplied an ecozones raster ('ecoRaster' or 'ecoRasterURL'). ",
-        "Default for Canada will be used.")
-
-      ## 2024-12-04 NOTE:
-      ## Multiple users had issues downloading and extracting this file via prepInputs.
-      ## Downloading the ZIP directly and saving it in the inputs directory works OK.
-      ecoSF <- tryCatch(
-
-        prepInputs(
-          destinationPath = inputPath(sim),
-          url         = extractURL("ecoRaster"),
-          filename1   = "ecozone_shp.zip",
-          targetFile  = "ecozones.shp",
-          alsoExtract = "similar",
-          fun         = sf::st_read(targetFile, quiet = TRUE),
-          projectTo   = sim$masterRaster,
-          cropTo      = sim$masterRaster
-        ) |> Cache(),
-
-        error = function(e) stop(
-          "Canada ecozones Shapefile failed be downloaded and extracted:\n", e$message, "\n\n",
-          "If this error persists, download the ZIP file directly and save it to the inputs directory.",
-          "\nDownload URL: ", extractURL("ecoRaster"),
-          "\nInputs directory: ", normalizePath(inputPath(sim), winslash = "/"),
-          call. = F))
-
-      sim$ecoRaster <- terra::rasterize(
-        terra::vect(ecoSF),
-        sim$masterRaster,
-        field = "ECOZONE"
+        fun        = terra::rast
       ) |> Cache()
     }
   }
@@ -704,7 +579,7 @@ Init <- function(sim) {
 
       # If extracted archive: list all files in directory
       if (dirname(drPaths) != inputPath(sim)){
-        drPaths <- list.files(dirname(drPaths), full = TRUE)
+        drPaths <- list.files(dirname(drPaths), full.names = TRUE)
       }
 
       # List files by year
