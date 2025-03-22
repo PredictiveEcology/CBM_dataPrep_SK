@@ -94,7 +94,7 @@ defineModule(sim, list(
         "Names must match simulation years such that each raster can be accessed by",
         "subsetting the object with the 4 digit year name (e.g. sim$disturbanceRasters[[\"1990\"]]).",
         "Raster values will be summarized into the 'disturbanceEvents' table required by CBM_core.",
-        "Values must match disturbance events IDs in 'userDist' or 'disturbanceMeta'",
+        "Values must match disturbance event IDs in 'userDist' or 'disturbanceMeta'",
         "The default rasters are the Wulder and White disturbance rasters for SK covering 1984-2011."
       )),
     expectsInput(
@@ -109,7 +109,7 @@ defineModule(sim, list(
         "to create the 'disturbanceMeta' table input to CBM_core.",
         "The default is a table defining the values in the default 'disturbanceRasters'."),
       columns = c(
-        eventID    = "IDs present in 'disturbanceRaster' pixel values",
+        eventID    = "Event type ID",
         wholeStand = "Specifies if the whole stand is disturbed (1 = TRUE; 0 = FALSE)",
         name       = "Disturbance name (e.g. 'Wildfire')"
       )),
