@@ -15,7 +15,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "data.table", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development (>=0.0.7.9017)",
+    "PredictiveEcology/CBMutils@development (>=2.0.1)",
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
@@ -228,59 +228,21 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 
       sim <- Init(sim)
 
-      if (!is.null(sim$disturbanceRasters)){
-        sim <- scheduleEvent(sim, start(sim), "CBM_dataPrep_SK", "readDisturbanceEvents")
-      }
+      # Read annual disturbances
+      sim <- scheduleEvent(sim, start(sim), "CBM_dataPrep_SK", "readDisturbanceEvents")
     },
 
     readDisturbanceEvents = {
 
-      if (as.character(time(sim)) %in% names(sim$disturbanceRasters)){
-
-        # Get year disturbances
-        annualDist <- sim$disturbanceRasters[[as.character(time(sim))]]
-
-        # Convert to SpatRaster object
-        if (!is(annualDist, "SpatRaster")){
-          annualDist <- tryCatch(
-            terra::rast(annualDist),
-            error = function(e) stop(
-              "Disturbance raster for year ", time(sim), " failed to be read as terra SpatRaster: ",
-              e$message, call. = FALSE))
-        }
-
-        ## Convert masterRaster to SpatRaster
-        masterRaster <- sim$masterRaster
-        if (!inherits(masterRaster, "SpatRaster")){
-          masterRaster <- tryCatch(
-            terra::rast(masterRaster),
-            error = function(e) stop(
-              "'masterRaster' could not be converted to SpatRaster: ", e$message,
-              call. = FALSE))
-        }
-
-        # Align with master raster
-        annualDist <- postProcess(
-          annualDist,
-          to     = masterRaster,
-          method = "near" #TODO: consider resampling with mode
+      # Read annual disturbances
+      sim$disturbanceEvents <- rbind(
+        sim$disturbanceEvents,
+        CBMutils::dataPrep_disturbanceRasters(
+          sim$disturbanceRasters,
+          templateRast = sim$masterRaster,
+          year         = time(sim)
         ) |> Cache()
-
-        # Summarize events into a table
-        annualDist <- data.table::data.table(
-          pixelIndex = 1:terra::ncell(masterRaster),
-          year       = time(sim),
-          eventID    = as.integer(terra::values(annualDist)[,1])
-        ) %>%
-          subset(!is.na(eventID) & eventID > 0)
-
-        # Add to disturbance events
-        if (is.null(sim$disturbanceEvents)){
-          sim$disturbanceEvents <- annualDist
-        }else{
-          sim$disturbanceEvents <- rbind(sim$disturbanceEvents, annualDist)
-        }
-      }
+      )
 
       # Schedule for next year
       sim <- scheduleEvent(sim, time(sim) + 1, "CBM_dataPrep_SK", "readDisturbanceEvents")
@@ -634,47 +596,10 @@ Init <- function(sim) {
     if (suppliedElsewhere("disturbanceRastersURL", sim) &
         !identical(sim$disturbanceRastersURL, extractURL("disturbanceRasters"))){
 
-      drPaths <- preProcess(
-        destinationPath = inputPath(sim),
-        url = sim$disturbanceRastersURL,
-        fun = NA
-      )$targetFilePath
-
-      # If extracted archive: list all files in directory
-      if (dirname(drPaths) != inputPath(sim)){
-        drPaths <- list.files(dirname(drPaths), full.names = TRUE)
-      }
-
-      # List files by year
-      drInfo <- data.frame(
-        path = drPaths,
-        name = tools::file_path_sans_ext(basename(drPaths)),
-        ext  = tolower(tools::file_ext(drPaths))
+      sim$disturbanceRasters <- CBMutils::dataPrep_disturbanceRastersURL(
+        destinationPath       = inputPath(sim),
+        disturbanceRastersURL = sim$disturbanceRastersURL
       )
-      drInfo$year_regexpr <- regexpr("[0-9]{4}", drInfo$name)
-      drInfo$year <- sapply(1:nrow(drInfo), function(i){
-        if (drInfo[i,]$year_regexpr != -1){
-          paste(
-            strsplit(drInfo[i,]$name, "")[[1]][0:3 + drInfo[i,]$year_regexpr],
-            collapse = "")
-        }else NA
-      })
-
-      if (all(is.na(drInfo$year))) stop(
-        "Disturbance raster(s) from 'disturbanceRasterURL' must be named with 4-digit years")
-      drInfo <- drInfo[!is.na(drInfo$year),, drop = FALSE]
-
-      # Choose file type to return for each year
-      drYears <- unique(sort(drInfo$year))
-      sim$disturbanceRasters <- sapply(setNames(drYears, drYears), function(drYear){
-        drInfoYear <- subset(drInfo, year == drYear)
-        if (nrow(drInfoYear) > 1){
-          if ("grd" %in% drInfoYear$ext) return(subset(drInfoYear, ext == "grd")$path)
-          if ("tif" %in% drInfoYear$ext) return(subset(drInfoYear, ext == "grd")$path)
-          drInfoYear$size <- file.size(drInfoYear$path)
-          drInfoYear$path[drInfoYear$size == max(drInfoYear$size)][[1]]
-        }else drInfoYear$path
-      })
 
     }else{
 
@@ -682,22 +607,16 @@ Init <- function(sim) {
         "User has not supplied disturbance rasters ('disturbanceRasters'). ",
         "Default for Saskatchewan will be used.")
 
-      # Set years where disturbance rasters are available
-      distYears <- 1985:2011
-
-      preProcess(
-        destinationPath = inputPath(sim),
-        url         = extractURL("disturbanceRasters"),
-        filename1   = "disturbance_testArea.zip",
-        targetFile  = "ReadMe.txt",
-        fun         = function() NULL,
-        alsoExtract = do.call(c, lapply(distYears, function(simYear){
-          paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
-        })))
-
-      sim$disturbanceRasters <- setNames(
-        file.path(inputPath(sim), "disturbance_testArea", paste0("SaskDist_", distYears, ".grd")),
-        distYears)
+      sim$disturbanceRasters <- list(
+        CBMutils::dataPrep_disturbanceRastersURL(
+          destinationPath       = inputPath(sim),
+          disturbanceRastersURL = extractURL("disturbanceRasters"),
+          archive               = "disturbance_testArea.zip",
+          targetFile            = "disturbance_testArea",
+          alsoExtract           = do.call(c, lapply(1985:2011, function(simYear){
+            paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
+          }))
+        ))
 
       # Disturbance information
       if (!suppliedElsewhere("userDist", sim) & !suppliedElsewhere("userDistURL", sim) &

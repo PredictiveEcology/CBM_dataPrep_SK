@@ -153,13 +153,14 @@ test_that("Module runs with defaults", {
 
   for (colName in c("pixelIndex", "year", "eventID")){
     expect_true(colName %in% names(simTest$disturbanceEvents))
+    expect_true(is.integer(simTest$disturbanceEvents[[colName]]))
     expect_true(all(!is.na(simTest$disturbanceEvents[[colName]])))
   }
 
-  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$spatialDT$pixelIndex))
+  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$allPixDT$pixelIndex))
   expect_true(all(simTest$disturbanceEvents$year       %in% 1985:2011))
 
-  expect_equal(nrow(simTest$disturbanceEvents), 141564)
+  expect_equal(nrow(simTest$disturbanceEvents), 295569)
 
 
   ## Check output 'disturbanceMeta' ----

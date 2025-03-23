@@ -15,7 +15,7 @@ test_that("Module runs with study AOI", {
 
     SpaDES.project::setupProject(
 
-      times = list(start = 1985, end = 2011),
+      times = list(start = 1998, end = 2000),
 
       modules = "CBM_dataPrep_SK",
       paths   = list(
@@ -168,13 +168,14 @@ test_that("Module runs with study AOI", {
 
   for (colName in c("pixelIndex", "year", "eventID")){
     expect_true(colName %in% names(simTest$disturbanceEvents))
+    expect_true(is.integer(simTest$disturbanceEvents[[colName]]))
     expect_true(all(!is.na(simTest$disturbanceEvents[[colName]])))
   }
 
-  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$spatialDT$pixelIndex))
-  expect_true(all(simTest$disturbanceEvents$year       %in% 1985:2011))
+  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$allPixDT$pixelIndex))
+  expect_true(all(simTest$disturbanceEvents$year       %in% 1998:2000))
 
-  expect_equal(nrow(simTest$disturbanceEvents), 19)
+  expect_equal(nrow(simTest$disturbanceEvents), 1393)
 
 
   ## Check output 'disturbanceMeta' ----
