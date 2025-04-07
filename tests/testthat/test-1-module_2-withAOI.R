@@ -35,7 +35,6 @@ test_that("Module runs with study AOI", {
       dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
       spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
       species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv")),
-      gcMeta     = read.csv(file.path(spadesTestPaths$temp$inputs, "gcMetaEg.csv")),
 
       masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
 
@@ -104,27 +103,34 @@ test_that("Module runs with study AOI", {
   expect_true(is.factor(simTest$level3DT$gcids))
 
 
-  ## Check output 'speciesPixelGroup' ----
-
-  expect_true(!is.null(simTest$speciesPixelGroup))
-  expect_true(inherits(simTest$speciesPixelGroup, "data.table"))
-
-  for (colName in c("pixelGroup", "species_id")){
-    expect_true(colName %in% names(simTest$speciesPixelGroup))
-    expect_true(all(!is.na(simTest$speciesPixelGroup[[colName]])))
-  }
-
-  # Check that there is 1 for every pixel group
-  expect_equal(nrow(simTest$speciesPixelGroup), nrow(simTest$level3DT))
-  expect_equal(sort(simTest$speciesPixelGroup$pixelGroup), simTest$level3DT$pixelGroup)
-
-
   ## Check output 'curveID' ----
 
   expect_true(!is.null(simTest$curveID))
   expect_true(length(simTest$curveID) >= 1)
   expect_true("gcids" %in% simTest$curveID)
   expect_true(all(simTest$curveID %in% names(simTest$level3DT)))
+
+
+  ## Check output 'gcMeta' ----
+
+  expect_true(!is.null(simTest$gcMeta))
+  expect_true(inherits(simTest$gcMeta, "data.table"))
+
+  for (colName in c("gcids", "species_id", "sw_hw")){
+    expect_true(colName %in% names(simTest$gcMeta))
+    expect_true(all(!is.na(simTest$gcMeta[[colName]])))
+  }
+
+
+  ## Check output 'userGcM3' ----
+
+  expect_true(!is.null(simTest$userGcM3))
+  expect_true(inherits(simTest$userGcM3, "data.table"))
+
+  for (colName in c("gcids", "Age", "MerchVolume")){
+    expect_true(colName %in% names(simTest$userGcM3))
+    expect_true(all(!is.na(simTest$userGcM3[[colName]])))
+  }
 
 
   ## Check output 'ecozones' ----
