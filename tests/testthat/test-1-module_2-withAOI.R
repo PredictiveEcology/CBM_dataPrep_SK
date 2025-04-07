@@ -76,6 +76,12 @@ test_that("Module runs with study AOI", {
 
   expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
 
+  # Check spinup ages are all >= 3
+  expect_true("ageSpinup" %in% names(simTest$spatialDT))
+  expect_equal(simTest$spatialDT$ageSpinup[simTest$spatialDT$ages >= 3],
+               simTest$spatialDT$ages[simTest$spatialDT$ages >= 3])
+  expect_true(all(simTest$ageSpinup[simTest$spatialDT$ages < 3] == 3))
+
   # Expect that there is 1 row for every non-NA cell in masterRaster
   mrValues <- terra::values(terra::rast(file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif")))
   expect_equal(nrow(simTest$spatialDT), sum(!is.na(mrValues[,1])))
@@ -149,16 +155,6 @@ test_that("Module runs with study AOI", {
 
   # Check that there are no NAs
   expect_true(all(!is.na(simTest$spatialUnits)))
-
-
-  ## Check output 'realAges' ----
-
-  expect_true(!is.null(simTest$realAges))
-  expect_true(class(simTest$realAges) %in% c("integer", "numeric"))
-
-  # Check that the real ages match the original ages where <3 now equals 3
-  expect_equal(simTest$realAges[simTest$realAges >= 3], simTest$level3DT$ages[simTest$realAges >= 3])
-  expect_true(all(simTest$ages[simTest$realAges < 3] == 3))
 
 
   ## Check output 'disturbanceEvents' -----
