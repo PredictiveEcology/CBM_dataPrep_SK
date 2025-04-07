@@ -142,6 +142,7 @@ defineModule(sim, list(
         pixelIndex      = "'masterRaster' cell index",
         pixelGroup      = "Pixel group ID",
         ages            = "Stand ages extracted from input 'ageRaster'",
+        ageSpinup       = "Stand ages raised to minimum of age 3 to use in the spinup",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
@@ -182,11 +183,6 @@ defineModule(sim, list(
       desc = paste(
         "Spatial unit IDs extracted from input 'spuRaster' for each pixel group.",
         "Required input to CBM_vol2biomass")),
-    createsOutput(
-      objectName = "realAges", objectClass = "numeric",
-      desc = paste(
-        "Stand ages extracted from input 'ageRaster' for each pixel group.",
-        "Required input to CBM_core.")),
     createsOutput(
       objectName = "disturbanceEvents", objectClass = "data.table",
       desc = paste(
@@ -351,8 +347,13 @@ Init <- function(sim) {
   # Keep only essential columns
   sim$spatialDT <- spatialDT[, c("pixelIndex", "pixelGroup", names(pgCols)), with = FALSE]
 
+  # Alter ages for the spinup
+  ## Temporary fix to CBM_core issue: https://github.com/PredictiveEcology/CBM_core/issues/1
+  sim$spatialDT[, ageSpinup := ages]
+  sim$spatialDT[ageSpinup < 3, ageSpinup := 3]
 
-  ## Create sim$level3DT, sim$realAges, and sim$curveID ----
+
+  ## Create sim$level3DT and sim$curveID ----
 
   level3DT <- unique(sim$spatialDT[, -("pixelIndex")])
   setkeyv(level3DT, "pixelGroup")
@@ -364,12 +365,6 @@ Init <- function(sim) {
   # Set sim$level3DT$gcids to be a factor
   set(level3DT, j = "gcids",
       value = factor(CBMutils::gcidsCreate(level3DT[, sim$curveID, with = FALSE])))
-
-  # Create 'realAges' output object and set ages to be >= 3
-  ## Temporary fix to CBM_core issue: https://github.com/PredictiveEcology/CBM_core/issues/1
-  sim$realAges <- level3DT[, ages]
-  level3DT[ages <= 3, ages := 3]
-  setorderv(level3DT, "pixelGroup")
 
   # Join with spinup parameters
   setkeyv(level3DT, "spatial_unit_id")
