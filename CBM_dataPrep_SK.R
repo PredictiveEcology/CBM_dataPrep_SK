@@ -36,21 +36,20 @@ defineModule(sim, list(
       objectName = "spinupSQL", objectClass = "dataset",
       desc = "Table containing many necesary spinup parameters", sourceURL = NA), # FROM DEFAULTS
     expectsInput(
-      objectName = "species_tr", objectClass = "dataset", desc = NA, sourceURL = NA), # FROM DEFAULTS
-    expectsInput(
       objectName = "gcMeta", objectClass = "data.frame",
-      desc = paste("Provides equivalent between provincial boundaries",
-                   "CBM-id for provincial boundaries and CBM-spatial unit ids"),
-      sourceURL =
-        "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing"), # FROM VOL2BIOMASS
+      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ",
+      desc = "Growth curve metadata"),
     expectsInput(
       objectName = "gcMetaURL", objectClass = "character",
       desc = "URL for gcMeta"),
     expectsInput(
+      objectName = "species_tr", objectClass = "dataset",
+      desc = paste(
+        "CBM-CFS3 'species_tr' table with columns 'species_id' and 'name'.",
+        "'Required if 'gcMeta' does not contain a 'species_id' column.")),
+    expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
-      desc = paste("User file containing:",
-                   "`gcids`, `Age`, `MerchVolume`.",
-                   "Default name `userGcM3`."),
+      desc = "Growth curve volumes by age",
       sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
     expectsInput(
       objectName = "userGcM3URL", objectClass = "character",
@@ -75,7 +74,7 @@ defineModule(sim, list(
       sourceURL = "https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr"),
     expectsInput(
       objectName = "gcIndexRasterURL", objectClass = "character",
-      desc = "URL for gcIndexRaste - optional, need this or a ageRaster"),
+      desc = "URL for gcIndexRaster"),
     expectsInput(
       objectName = "spuLocator", objectClass = "sf|SpatRaster",
       desc = paste(
@@ -160,19 +159,16 @@ defineModule(sim, list(
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
     createsOutput(
-      objectName = "speciesPixelGroup", objectClass = "data.frame",
-      desc = paste(
-        "Table connecting pixel groups to species IDs.",
-        "Required input to CBM_core."),
-      columns = c(
-        pixelGroup = "Pixel group ID",
-        species_id = "Species ID"
-      )),
-    createsOutput(
       objectName = "curveID", objectClass = "character",
       desc = paste(
         "Column names in 'level3DT' that uniquely define each pixel group growth curve ID.",
         "Required input to CBM_vol2biomass")),
+    createsOutput(
+      objectName = "gcMeta", objectClass = "data.frame",
+      desc = "Growth curve metadata"),
+    createsOutput(
+      objectName = "userGcM3", objectClass = "data.frame",
+      desc = "Growth curve volumes by age"),
     createsOutput(
       objectName = "ecozones", objectClass = "numeric",
       desc = paste(
@@ -386,22 +382,49 @@ Init <- function(sim) {
   sim$spatialUnits <- sim$level3DT$spatial_unit_id
 
 
-  ## Create sim$speciesPixelGroup ----
+  ## gcMeta: set 'species_id' ----
 
-  gcMeta <- sim$gcMeta
-  if (!inherits(gcMeta, "data.table")){
-    gcMeta <- tryCatch(
-      data.table::as.data.table(gcMeta),
-      error = function(e) stop(
-        "'gcMeta' could not be converted to data.table: ", e$message, call. = FALSE))
+  if (!"species_id" %in% names(sim$gcMeta)){
+
+    if (is.null(sim$species_tr)) stop("'species_tr' required to set gcMeta 'species_id")
+    if (!"species" %in% names(sim$gcMeta)) stop("gcMeta requires 'species' column to determine 'species_id'")
+
+    gcMeta <- sim$gcMeta
+    if (!inherits(gcMeta, "data.table")){
+      gcMeta <- tryCatch(
+        data.table::as.data.table(gcMeta),
+        error = function(e) stop(
+          "'gcMeta' could not be converted to data.table: ", e$message, call. = FALSE))
+    }
+
+    species_tr <- sim$species_tr
+    if (!inherits(species_tr, "data.table")){
+      species_tr <- tryCatch(
+        data.table::as.data.table(species_tr),
+        error = function(e) stop(
+          "'species_tr' could not be converted to data.table: ", e$message, call. = FALSE))
+    }
+
+    if ("locale_id" %in% names(species_tr)) species_tr <- subset(species_tr, locale_id == 1)
+
+    gcMeta[,     name_lower := trimws(tolower(species))]
+    species_tr[, name_lower := trimws(tolower(name))]
+
+    gcMeta <- merge(
+      gcMeta, species_tr[, .(name_lower, species_id)],
+      by = "name_lower", all.x = TRUE)
+
+    if (any(is.na(gcMeta$species_id))) stop(
+      "gcMeta contains species name(s) not found in species_tr: ",
+      paste(shQuote(unique(subset(gcMeta, is.na(species_id))$name)), collapse = ", "))
+
+    sim$gcMeta <- gcMeta[, c(names(sim$gcMeta), "species_id"), with = FALSE]
+    data.table::setkey(sim$gcMeta, gcids)
+
+    rm(gcMeta)
+    rm(species_tr)
+
   }
-
-  speciesPixelGroup <- gcMeta[sim$species_tr, on = .(species = name)]
-  speciesPixelGroup <- speciesPixelGroup[gcids >= 1,]
-  speciesPixelGroup <- speciesPixelGroup[,.(gcids, species_id)]
-  speciesPixelGroup <- speciesPixelGroup[sim$spatialDT, on = .(gcids=gcids)]
-  speciesPixelGroup <- unique(speciesPixelGroup[,.(pixelGroup, species_id)])
-  sim$speciesPixelGroup <- speciesPixelGroup
 
 
   ## Create sim$disturbanceMeta, sim$historicDMtype, and sim$lastPassDMtype ----
@@ -477,6 +500,37 @@ Init <- function(sim) {
 
   ## Read inputs ----
 
+  # Growth and yield metadata
+  if (!suppliedElsewhere("gcMeta", sim)){
+
+    if (suppliedElsewhere("gcMetaURL", sim) &
+        !identical(sim$gcMetaURL, extractURL("gcMeta"))){
+
+      sim$gcMeta <- prepInputs(
+        destinationPath = inputPath(sim),
+        url = sim$gcMetaURL,
+        fun = data.table::fread
+      )
+
+    }else{
+
+      if (!suppliedElsewhere("gcMetaURL", sim, where = "user")) message(
+        "User has not supplied growth curve metadata ('gcMeta' or 'gcMetaURL'). ",
+        "Default for Saskatchewan will be used.")
+
+      sim$gcMeta <- prepInputs(
+        destinationPath = inputPath(sim),
+        url        = extractURL("gcMeta"),
+        targetFile = "gcMetaEg.csv",
+        fun        = data.table::fread
+      )
+
+      sim$gcMeta$sw_hw <- sapply(sim$gcMeta$forest_type_id == 1, ifelse, "sw", "hw")
+
+      data.table::setkey(sim$gcMeta, gcids)
+    }
+  }
+
   # Growth and yield table
   ## TODO add a data manipulation to adjust if the m3 are not given on a yearly basis.
   if (!suppliedElsewhere("userGcM3", sim)){
@@ -503,6 +557,8 @@ Init <- function(sim) {
         fun        = data.table::fread
       )
       names(sim$userGcM3) <- c("gcids", "Age", "MerchVolume")
+
+      data.table::setkeyv(sim$userGcM3, c("gcids", "Age"))
     }
   }
 
