@@ -29,8 +29,8 @@ defineModule(sim, list(
       desc = "Path to the CBM defaults databse",
       sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db"), # FROM DEFAULTS
     expectsInput(
-      objectName = "dMatrixAssociation", objectClass = "data.frame",
-      desc = "Disturbance table matching different disturbance IDs",
+      objectName = "disturbanceMatrix", objectClass = "data.frame",
+      desc = "Table of disturbances with columns 'spatial_unit_id', 'disturbance_type_id', 'disturbance_matrix_id'",
       sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_exn/disturbance_matrix_association.csv"), # FROM DEFAULTS
     expectsInput(
       objectName = "spinupSQL", objectClass = "dataset",
@@ -434,7 +434,7 @@ Init <- function(sim) {
   listDist <- CBMutils::spuDist(
     spuIDs = spuIDs,
     dbPath = sim$dbPath,
-    disturbance_matrix_association = sim$dMatrixAssociation
+    disturbance_matrix_association = sim$disturbanceMatrix
   )
 
   # Check if userDist already has all the required IDs

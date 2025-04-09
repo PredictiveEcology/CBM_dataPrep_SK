@@ -32,7 +32,7 @@ test_that("Module runs with defaults", {
       dbPath     = file.path(spadesTestPaths$temp$inputs, "cbm_defaults_v1.2.8340.362.db"),
       ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
       spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
-      dMatrixAssociation = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
+      disturbanceMatrix = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
       spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
       species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv"))
     )
