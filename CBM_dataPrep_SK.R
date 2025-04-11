@@ -43,9 +43,9 @@ defineModule(sim, list(
       objectName = "gcMetaURL", objectClass = "character",
       desc = "URL for gcMeta"),
     expectsInput(
-      objectName = "species_tr", objectClass = "dataset",
+      objectName = "CBMspecies", objectClass = "dataset",
       desc = paste(
-        "CBM-CFS3 'species_tr' table with columns 'species_id' and 'name'.",
+        "CBM-CFS3 'species.csv' table with columns 'species_id', 'species_name'",
         "'Required if 'gcMeta' does not contain a 'species_id' column.")),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
@@ -383,10 +383,9 @@ Init <- function(sim) {
 
 
   ## gcMeta: set 'species_id' ----
-
   if (!"species_id" %in% names(sim$gcMeta)){
 
-    if (is.null(sim$species_tr)) stop("'species_tr' required to set gcMeta 'species_id")
+    if (is.null(sim$CBMspecies)) stop("'CBMspecies' required to set gcMeta 'species_id")
     if (!"species" %in% names(sim$gcMeta)) stop("gcMeta requires 'species' column to determine 'species_id'")
 
     gcMeta <- sim$gcMeta
@@ -397,32 +396,30 @@ Init <- function(sim) {
           "'gcMeta' could not be converted to data.table: ", e$message, call. = FALSE))
     }
 
-    species_tr <- sim$species_tr
-    if (!inherits(species_tr, "data.table")){
-      species_tr <- tryCatch(
-        data.table::as.data.table(species_tr),
+    CBMspecies <- sim$CBMspecies
+    if (!inherits(CBMspecies, "data.table")){
+      CBMspecies <- tryCatch(
+        data.table::as.data.table(CBMspecies),
         error = function(e) stop(
-          "'species_tr' could not be converted to data.table: ", e$message, call. = FALSE))
+          "'CBMspecies' could not be converted to data.table: ", e$message, call. = FALSE))
     }
 
-    if ("locale_id" %in% names(species_tr)) species_tr <- subset(species_tr, locale_id == 1)
-
     gcMeta[,     name_lower := trimws(tolower(species))]
-    species_tr[, name_lower := trimws(tolower(name))]
+    CBMspecies[, name_lower := trimws(tolower(species_name))]
 
     gcMeta <- merge(
-      gcMeta, species_tr[, .(name_lower, species_id)],
+      gcMeta, CBMspecies[, .(name_lower, species_id)],
       by = "name_lower", all.x = TRUE)
 
     if (any(is.na(gcMeta$species_id))) stop(
-      "gcMeta contains species name(s) not found in species_tr: ",
+      "gcMeta contains species name(s) not found in CBMspecies: ",
       paste(shQuote(unique(subset(gcMeta, is.na(species_id))$name)), collapse = ", "))
 
     sim$gcMeta <- gcMeta[, c(names(sim$gcMeta), "species_id"), with = FALSE]
     data.table::setkey(sim$gcMeta, gcids)
 
     rm(gcMeta)
-    rm(species_tr)
+    rm(CBMspecies)
 
   }
 
