@@ -5,47 +5,48 @@ test_that("Module runs with defaults", {
 
   ## Run simInit and spades ----
 
-  # Restore paths on teardown
-  pathsOriginal <- list(wd = getwd(), libs = .libPaths())
-  withr::defer({
-    setwd(pathsOriginal$wd)
-    #.libPaths(pathsOriginal$libs)
-  })
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "1-defaults")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
 
   # Set up project
-  simInitInput <- .SpaDESwithCallingHandlers(
+  simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
+      times = list(start = 1985, end = 2011),
+
       modules = "CBM_dataPrep_SK",
       paths   = list(
-        projectPath = file.path(testDirs$temp$projects, "1-defaults"),
-        modulePath  = testDirs$temp$modules,
-        inputPath   = testDirs$temp$inputs
-        #, packagePath = testDirs$temp$libPath
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        packagePath = spadesTestPaths$temp$packages,
+        inputPath   = spadesTestPaths$temp$inputs,
+        cachePath   = spadesTestPaths$temp$cache,
+        outputPath  = file.path(projectPath, "outputs")
       ),
-      require = "testthat",
 
-      dbPath     = .test_defaultInputs("dbPath"),
-      spinupSQL  = .test_defaultInputs("spinupSQL"),
-      species_tr = .test_defaultInputs("species_tr"),
-      gcMeta     = .test_defaultInputs("gcMeta"),
+      require = "sf",
 
-      # Dummy input provded for 'mySpuDmids' so that reading the default 'userDist' is skipped
-      # User input is required to match the default 'userDist' with CBM-CFS3 disturbances
-      mySpuDmids = "skip_reading_default_userDist"
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "cbm_defaults_v1.2.8340.362.db"),
+      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
+      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
+      disturbanceMatrix = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
+      spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
+      species_tr = read.csv(file.path(spadesTestPaths$testdata, "species_tr.csv"))
     )
   )
 
   # Run simInit
-  simTestInit <- .SpaDESwithCallingHandlers(
+  simTestInit <- SpaDEStestMuffleOutput(
     SpaDES.core::simInit2(simInitInput)
   )
 
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- .SpaDESwithCallingHandlers(
+  simTest <- SpaDEStestMuffleOutput(
     SpaDES.core::spades(simTestInit)
   )
 
@@ -63,6 +64,12 @@ test_that("Module runs with defaults", {
   }
 
   expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
+
+  # Check spinup ages are all >= 3
+  expect_true("ageSpinup" %in% names(simTest$spatialDT))
+  expect_equal(simTest$spatialDT$ageSpinup[simTest$spatialDT$ages >= 3],
+               simTest$spatialDT$ages[simTest$spatialDT$ages >= 3])
+  expect_true(all(simTest$ageSpinup[simTest$spatialDT$ages < 3] == 3))
 
 
   ## Check output 'level3DT' ----
@@ -87,27 +94,34 @@ test_that("Module runs with defaults", {
   expect_true(is.factor(simTest$level3DT$gcids))
 
 
-  ## Check output 'speciesPixelGroup' ----
-
-  expect_true(!is.null(simTest$speciesPixelGroup))
-  expect_true(inherits(simTest$speciesPixelGroup, "data.table"))
-
-  for (colName in c("pixelGroup", "species_id")){
-    expect_true(colName %in% names(simTest$speciesPixelGroup))
-    expect_true(all(!is.na(simTest$speciesPixelGroup[[colName]])))
-  }
-
-  # Check that there is 1 for every pixel group
-  expect_equal(nrow(simTest$speciesPixelGroup), nrow(simTest$level3DT))
-  expect_equal(sort(simTest$speciesPixelGroup$pixelGroup), simTest$level3DT$pixelGroup)
-
-
   ## Check output 'curveID' ----
 
   expect_true(!is.null(simTest$curveID))
   expect_true(length(simTest$curveID) >= 1)
   expect_true("gcids" %in% simTest$curveID)
   expect_true(all(simTest$curveID %in% names(simTest$level3DT)))
+
+
+  ## Check output 'gcMeta' ----
+
+  expect_true(!is.null(simTest$gcMeta))
+  expect_true(inherits(simTest$gcMeta, "data.table"))
+
+  for (colName in c("gcids", "species_id", "sw_hw")){
+    expect_true(colName %in% names(simTest$gcMeta))
+    expect_true(all(!is.na(simTest$gcMeta[[colName]])))
+  }
+
+
+  ## Check output 'userGcM3' ----
+
+  expect_true(!is.null(simTest$userGcM3))
+  expect_true(inherits(simTest$userGcM3, "data.table"))
+
+  for (colName in c("gcids", "Age", "MerchVolume")){
+    expect_true(colName %in% names(simTest$userGcM3))
+    expect_true(all(!is.na(simTest$userGcM3[[colName]])))
+  }
 
 
   ## Check output 'ecozones' ----
@@ -134,14 +148,29 @@ test_that("Module runs with defaults", {
   expect_true(all(!is.na(simTest$spatialUnits)))
 
 
-  ## Check output 'realAges' ----
+  ## Check output 'disturbanceEvents' -----
 
-  expect_true(!is.null(simTest$realAges))
-  expect_true(class(simTest$realAges) %in% c("integer", "numeric"))
+  expect_true(!is.null(simTest$disturbanceEvents))
+  expect_true(inherits(simTest$disturbanceEvents, "data.table"))
 
-  # Check that the real ages match the original ages where <3 now equals 3
-  expect_equal(simTest$realAges[simTest$realAges >= 3], simTest$level3DT$ages[simTest$realAges >= 3])
-  expect_true(all(simTest$ages[simTest$realAges < 3] == 3))
+  for (colName in c("pixelIndex", "year", "eventID")){
+    expect_true(colName %in% names(simTest$disturbanceEvents))
+    expect_true(is.integer(simTest$disturbanceEvents[[colName]]))
+    expect_true(all(!is.na(simTest$disturbanceEvents[[colName]])))
+  }
+
+  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$allPixDT$pixelIndex))
+  expect_true(all(simTest$disturbanceEvents$year       %in% 1985:2011))
+
+  expect_equal(nrow(simTest$disturbanceEvents), 295569)
+
+
+  ## Check output 'disturbanceMeta' ----
+
+  expect_true(!is.null(simTest$disturbanceMeta))
+  expect_true(inherits(simTest$disturbanceMeta, "data.table"))
+
+  expect_equal(nrow(simTest$disturbanceMeta), 20)
 
 
   ## Check output 'historicDMtype' ----
@@ -166,16 +195,6 @@ test_that("Module runs with defaults", {
 
   # Check that there are no NAs
   expect_true(all(!is.na(simTest$lastPassDMtype)))
-
-
-  ## Check output 'disturbanceRasters' -----
-
-  expect_true(!is.null(simTest$disturbanceRasters))
-  expect_true(inherits(simTest$disturbanceRasters, "character"))
-
-  # Check at least one file was downloaded
-  expect_true(length(simTest$disturbanceRasters) >= 1)
-  expect_true(all(file.exists(simTest$disturbanceRasters)))
 
 })
 
