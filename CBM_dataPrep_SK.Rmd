@@ -36,7 +36,7 @@ Our example study area is defined by the object [`masterRaster`](https://predict
 |-----------------|-----------------|---------------------|-----------------|
 | dMatrixAssociation | Data table | Default disturbance IDs | CBM_defaults |
 | spinupSQL | Data table | Parameters for CBM_core spinup event | CBM_defaults |
-| species_tr | Data table | Default species data | CBM_defaults |
+| CBMspecies | Data table | Default species data | CBM_defaults |
 | gcMeta | Data table | Species and growth curve IDs | [Google Drive](https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing) |
 | userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
 | masterRaster | SpatRaster | Raster of study area | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW) |
