@@ -383,6 +383,7 @@ Init <- function(sim) {
 
 
   ## gcMeta: set 'species_id' ----
+
   if (!"species_id" %in% names(sim$gcMeta)){
 
     if (is.null(sim$CBMspecies)) stop("'CBMspecies' required to set gcMeta 'species_id")
@@ -521,9 +522,7 @@ Init <- function(sim) {
         targetFile = "gcMetaEg.csv",
         fun        = data.table::fread
       )
-
-      sim$gcMeta$sw_hw <- sapply(sim$gcMeta$forest_type_id == 1, ifelse, "sw", "hw")
-
+      sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
       data.table::setkey(sim$gcMeta, gcids)
     }
   }
@@ -553,8 +552,7 @@ Init <- function(sim) {
         targetFile = "userGcM3.csv",
         fun        = data.table::fread
       )
-      names(sim$userGcM3) <- c("gcids", "Age", "MerchVolume")
-
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcids", "Age", "MerchVolume"))
       data.table::setkeyv(sim$userGcM3, c("gcids", "Age"))
     }
   }
@@ -690,7 +688,7 @@ Init <- function(sim) {
           targetFile = "SK_disturbances.csv",
           fun        = data.table::fread
         )
-        names(sim$userDist)[names(sim$userDist) == "rasterID"] <- "eventID"
+        data.table::setnames(sim$userDist, "rasterID", "eventID")
       }
     }
   }
