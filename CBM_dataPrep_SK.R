@@ -314,13 +314,15 @@ Init <- function(sim) {
   }
 
   # Create sim$allPixDT: Summarize input values into table
-  sim$allPixDT <- data.table::data.table(
+  allPixDT <- data.table::data.table(
     pixelIndex = 1:terra::ncell(inRast$masterRaster)
   )
   for (i in 1:length(pgCols)){
-    sim$allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
+    allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
   }
-  setkeyv(sim$allPixDT, "pixelIndex")
+  setkeyv(allPixDT, "pixelIndex")
+
+  sim$allPixDT <- allPixDT
 
   # Create sim$spatialDT: Summarize input raster values where masterRaster is not NA
   spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
