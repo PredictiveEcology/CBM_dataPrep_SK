@@ -23,8 +23,10 @@ test_that("Multi module: SK-small 1998-2000", {
           CBM_defaults    = "PredictiveEcology/CBM_defaults@development",
           CBM_vol2biomass = "PredictiveEcology/CBM_vol2biomass@development",
           CBM_core        = "PredictiveEcology/CBM_core@development"
-        )), CBM_dataPrep_SK = "CBM_dataPrep_SK"
+        )),
+        CBM_dataPrep_SK = "CBM_dataPrep_SK"
       )[c("CBM_defaults", "CBM_dataPrep_SK", "CBM_vol2biomass", "CBM_core")],
+
       times   = times,
       paths   = list(
         projectPath = projectPath,
