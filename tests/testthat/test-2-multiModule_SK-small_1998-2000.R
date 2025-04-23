@@ -102,7 +102,6 @@ test_that("Multi module: SK-small 1998-2000", {
       eventExpect = c(
         "init"              = times$start,
         "spinup"            = times$start,
-        "postSpinup"        = times$start,
         setNames(times$start:times$end, rep("annual", length(times$star:times$end))),
         "accumulateResults" = times$end
       )),
