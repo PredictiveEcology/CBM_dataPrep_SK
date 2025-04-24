@@ -135,6 +135,7 @@ defineModule(sim, list(
         "Required input to CBM_vol2biomass and CBM_core."),
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
+        area            = "Stand area in meters",
         ages            = "Stand ages extracted from input 'ageRaster'",
         ageSpinup       = "Stand ages raised to minimum of age 3 to use in the spinup",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
@@ -276,7 +277,8 @@ Init <- function(sim) {
 
   # Create sim$allPixDT: Summarize input values into table
   allPixDT <- data.table::data.table(
-    pixelIndex = 1:terra::ncell(inRast$masterRaster)
+    pixelIndex = 1:terra::ncell(inRast$masterRaster),
+    area       = terra::values(terra::cellSize(inRast$masterRaster, unit = "m", mask = TRUE, transform = FALSE))[,1]
   )
   for (i in 1:length(pgCols)){
     allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]

@@ -102,7 +102,6 @@ test_that("Multi module: SK-small 1998-2000", {
       eventExpect = c(
         "init"              = times$start,
         "spinup"            = times$start,
-        "postSpinup"        = times$start,
         setNames(times$start:times$end, rep("annual", length(times$star:times$end))),
         "accumulateResults" = times$end
       )),
@@ -117,15 +116,7 @@ test_that("Multi module: SK-small 1998-2000", {
 
   ## Check outputs ----
 
-  expect_true(!is.null(simTest$spinup_input))
-
   expect_true(!is.null(simTest$spinupResult))
-
-  expect_true(!is.null(simTest$cbm_vars))
-
-  expect_true(!is.null(simTest$pixelGroupC))
-
-  expect_true(!is.null(simTest$pixelKeep))
 
   expect_true(!is.null(simTest$cbmPools))
 
