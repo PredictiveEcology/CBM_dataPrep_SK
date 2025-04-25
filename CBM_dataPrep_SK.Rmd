@@ -49,11 +49,7 @@ Our example study area is defined by the object [`masterRaster`](https://predict
 
 ## Module functioning
 
-Two central pieces are processed in [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git): the pixelGroups are created and disturbances are matched with disturbance matrices.
-
-### Pixel Groups
-
-[`pixelGroup`](https://predictiveecology.github.io/spadesCBM/lexicon.html) are unique combinations of age, growth curve (which means species), [spatial unit](https://predictiveecology.github.io/spadesCBM/lexicon.html) and [ecozone](https://predictiveecology.github.io/spadesCBM/lexicon.html). All pixels having identical age, growth curve, in the same spatial unit and ecozone share one `pixelGroup` number. The object `allPixelDT` has all the pixels in the `masterRaster`. The  `spatialDT` object is the long-form where each simulated pixel has its own line (no NAs), and `level3DT` lists only the pixel groups. In our example there are 1 347 529 pixels simulated (i.e., 1 347 529 lines in `spatialDT`) which are grouped in 739 pixelGroups for processing (i.e., 739 lines in `level3DT`). 
+The main goal of [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) is to match  disturbances with disturbance matrices.
 
 ### Disturbances
 
