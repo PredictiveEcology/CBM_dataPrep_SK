@@ -123,29 +123,46 @@ defineModule(sim, list(
       desc = "Table summarizing raster input data with 1 row for every 'masterRaster' pixel (including NAs)",
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
-        ages            = "Stand ages extracted from input 'ageRaster'",
+        ages            = "Cohort ages extracted from input 'ageRaster'",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
       )),
     createsOutput(
-      objectName = "spatialDT", objectClass = "data.table",
+      objectName = "standDT", objectClass = "data.table",
       desc = paste(
         "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
-        "Required input to CBM_vol2biomass and CBM_core."),
+        "Required input to CBM_core."),
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
         area            = "Stand area in meters",
-        ages            = "Stand ages extracted from input 'ageRaster'",
-        ageSpinup       = "Stand ages raised to minimum of age 3 to use in the spinup",
+        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'"
+      )),
+    createsOutput(
+      objectName = "cohortDT", objectClass = "data.table",
+      desc = paste(
+        "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
+        "Required input to CBM_core."),
+      columns = c(
+        cohortID        = "Cohort ID",
+        pixelIndex      = "'masterRaster' cell index",
+        ages            = "Cohort ages extracted from input 'ageRaster'",
+        ageSpinup       = "Cohort ages raised to minimum of age 3 to use in the spinup",
+        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
+      )),
+    createsOutput(
+      objectName = "spatialDT", objectClass = "data.table",
+      desc = "Required by CBM_vol2biomass",
+      columns = c(
+        pixelIndex      = "'masterRaster' cell index",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
-        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
-        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
+        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'",
+        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
       )),
     createsOutput(
       objectName = "curveID", objectClass = "character",
       desc = paste(
-        "Column names in 'spatialDT' that uniquely define each pixel group growth curve ID.",
+        "Column names in 'cohortDT' that uniquely define each pixel group growth curve ID.",
         "Required input to CBM_vol2biomass")),
     createsOutput(
       objectName = "gcMeta", objectClass = "data.frame",
@@ -222,7 +239,7 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-  ## Create sim$allPixDT and sim$spatialDT ----
+  ## Create sim$standDT and sim$cohortDT ----
 
   # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
@@ -283,7 +300,7 @@ Init <- function(sim) {
   for (i in 1:length(pgCols)){
     allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
   }
-  setkeyv(allPixDT, "pixelIndex")
+  data.table::setkey(allPixDT, pixelIndex)
 
   sim$allPixDT <- allPixDT
 
@@ -300,12 +317,23 @@ Init <- function(sim) {
     spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
   }
 
+  # For CBM_vol2biomass
+  sim$spatialDT <- spatialDT[, .SD, .SDcols = c("pixelIndex", "spatial_unit_id", "ecozones", "gcids")]
+
+  # For CBM_core
+  sim$standDT   <- spatialDT[, .SD, .SDcols = c("pixelIndex", "area", "spatial_unit_id")]
+  data.table::setkey(sim$standDT, pixelIndex)
+
+  sim$cohortDT  <- cbind(cohortID = spatialDT$pixelIndex,
+                         spatialDT[, .SD, .SDcols = c("pixelIndex", "gcids", "ages")])
+  data.table::setkey(sim$cohortDT, cohortID)
+
   # Alter ages for the spinup
   ## Temporary fix to CBM_core issue: https://github.com/PredictiveEcology/CBM_core/issues/1
-  spatialDT[, ageSpinup := ages]
-  spatialDT[ageSpinup < 3, ageSpinup := 3]
+  sim$cohortDT[, ageSpinup := ages]
+  sim$cohortDT[ageSpinup < 3, ageSpinup := 3]
 
-  sim$spatialDT <- spatialDT
+  rm(spatialDT)
 
 
   ## Create sim$curveID ----=
@@ -361,7 +389,7 @@ Init <- function(sim) {
   ## Create sim$disturbanceMeta, sim$historicDMtype, and sim$lastPassDMtype ----
 
   # List disturbances possible within in each spatial unit
-  spuIDs <- sort(unique(sim$spatialDT$spatial_unit_id))
+  spuIDs <- sort(unique(sim$standDT$spatial_unit_id))
   listDist <- CBMutils::spuDist(
     spuIDs = spuIDs,
     dbPath = sim$dbPath,
