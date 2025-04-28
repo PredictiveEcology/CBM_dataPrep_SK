@@ -132,7 +132,7 @@ defineModule(sim, list(
       objectName = "standDT", objectClass = "data.table",
       desc = paste(
         "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
-        "Required input to CBM_vol2biomass and CBM_core."),
+        "Required input to CBM_core."),
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
         area            = "Stand area in meters",
@@ -142,7 +142,7 @@ defineModule(sim, list(
       objectName = "cohortDT", objectClass = "data.table",
       desc = paste(
         "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
-        "Required input to CBM_vol2biomass and CBM_core."),
+        "Required input to CBM_core."),
       columns = c(
         cohortID        = "Cohort ID",
         pixelIndex      = "'masterRaster' cell index",
@@ -239,7 +239,7 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-  ## Create sim$allPixDT, sim$spatialDT, sim$standDT, sim$cohortDT ----
+  ## Create sim$standDT and sim$cohortDT ----
 
   # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
@@ -300,7 +300,7 @@ Init <- function(sim) {
   for (i in 1:length(pgCols)){
     allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
   }
-  setkeyv(allPixDT, "pixelIndex")
+  data.table::setkeyv(allPixDT, pixelIndex)
 
   sim$allPixDT <- allPixDT
 
