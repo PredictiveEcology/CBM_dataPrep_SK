@@ -70,7 +70,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$cohortDT))
   expect_true(inherits(simTest$cohortDT, "data.table"))
 
-  for (colName in c("pixelIndex", "gcids", "ages")){
+  for (colName in c("cohortID", "pixelIndex", "gcids", "ages")){
     expect_true(colName %in% names(simTest$cohortDT))
     expect_true(all(!is.na(simTest$cohortDT[[colName]])))
   }

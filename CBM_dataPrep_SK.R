@@ -300,7 +300,7 @@ Init <- function(sim) {
   for (i in 1:length(pgCols)){
     allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
   }
-  data.table::setkeyv(allPixDT, pixelIndex)
+  data.table::setkey(allPixDT, pixelIndex)
 
   sim$allPixDT <- allPixDT
 
