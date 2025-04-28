@@ -83,6 +83,7 @@ Because growth curves can be identified by strata, multiple columns can be used 
 | allPixDT | Data table | Summary table of raster input data with 1 row for each `masterRaster` pixel |
 | standDT | Data table | Table of stand attributes. Stands can have 1 or more cohorts |
 | cohortDT | Data table | TAble of cohort attributes |
+| spatialDT    | Data table  | Summary table of raster input data with 1 row for each `masterRaster pixel` that is not `NA` | 
 | curveID | Character | Column names in `cohortDT` that uniquely define each cohort growth curve ID |
 | gcMeta | Data table | Growth curve metadata |
 | userGcM3 | Data table | User provided growth curve data |
