@@ -29,11 +29,10 @@ test_that("Module runs with defaults", {
 
       require = "sf",
 
-      dbPath     = file.path(spadesTestPaths$temp$inputs, "cbm_defaults_v1.2.8340.362.db"),
+      dbPath     = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
       ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
       spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
       disturbanceMatrix = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
-      spinupSQL  = read.csv(file.path(spadesTestPaths$testdata, "spinupSQL.csv")),
       CBMspecies = read.csv(file.path(spadesTestPaths$testdata, "CBMspecies.csv"))
     )
   )
@@ -53,45 +52,36 @@ test_that("Module runs with defaults", {
   expect_s4_class(simTest, "simList")
 
 
-  ## Check output 'spatialDT' ----
+  ## Check output 'standDT' ----
 
-  expect_true(!is.null(simTest$spatialDT))
-  expect_true(inherits(simTest$spatialDT, "data.table"))
+  expect_true(!is.null(simTest$standDT))
+  expect_true(inherits(simTest$standDT, "data.table"))
 
-  for (colName in c("pixelIndex", "pixelGroup", "ages", "spatial_unit_id", "gcids", "ecozones")){
-    expect_true(colName %in% names(simTest$spatialDT))
-    expect_true(all(!is.na(simTest$spatialDT[[colName]])))
+  for (colName in c("pixelIndex", "area", "spatial_unit_id")){
+    expect_true(colName %in% names(simTest$standDT))
+    expect_true(all(!is.na(simTest$standDT[[colName]])))
   }
 
-  expect_identical(data.table::key(simTest$spatialDT), "pixelIndex")
+  expect_identical(data.table::key(simTest$standDT), "pixelIndex")
+
+
+  ## Check output 'cohortDT' ----
+
+  expect_true(!is.null(simTest$cohortDT))
+  expect_true(inherits(simTest$cohortDT, "data.table"))
+
+  for (colName in c("cohortID", "pixelIndex", "gcids", "ages")){
+    expect_true(colName %in% names(simTest$cohortDT))
+    expect_true(all(!is.na(simTest$cohortDT[[colName]])))
+  }
+
+  expect_identical(data.table::key(simTest$cohortDT), "cohortID")
 
   # Check spinup ages are all >= 3
-  expect_true("ageSpinup" %in% names(simTest$spatialDT))
-  expect_equal(simTest$spatialDT$ageSpinup[simTest$spatialDT$ages >= 3],
-               simTest$spatialDT$ages[simTest$spatialDT$ages >= 3])
-  expect_true(all(simTest$ageSpinup[simTest$spatialDT$ages < 3] == 3))
-
-
-  ## Check output 'level3DT' ----
-
-  expect_true(!is.null(simTest$level3DT))
-  expect_true(inherits(simTest$level3DT, "data.table"))
-
-  for (colName in c("pixelGroup", "ages", "spatial_unit_id", "gcids", "ecozones", "return_interval")){
-    expect_true(colName %in% names(simTest$level3DT))
-    expect_true(all(!is.na(simTest$level3DT[[colName]])))
-  }
-
-  expect_identical(data.table::key(simTest$level3DT), "pixelGroup")
-
-  # Expect that there is 1 row for every unique combination of key attributes in 'spatialDT'
-  expect_equal(
-    nrow(simTest$level3DT),
-    nrow(unique(simTest$spatialDT[, c("ages", "spatial_unit_id", "gcids", "ecozones")]))
-  )
-
-  # Expect that 'gcids' is a factor
-  expect_true(is.factor(simTest$level3DT$gcids))
+  expect_true("ageSpinup" %in% names(simTest$cohortDT))
+  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$ages >= 3],
+               simTest$cohortDT$ages[simTest$cohortDT$ages >= 3])
+  expect_true(all(simTest$ageSpinup[simTest$cohortDT$ages < 3] == 3))
 
 
   ## Check output 'curveID' ----
@@ -99,7 +89,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$curveID))
   expect_true(length(simTest$curveID) >= 1)
   expect_true("gcids" %in% simTest$curveID)
-  expect_true(all(simTest$curveID %in% names(simTest$level3DT)))
+  expect_true(all(simTest$curveID %in% names(simTest$cohortDT)))
 
 
   ## Check output 'gcMeta' ----
@@ -122,30 +112,6 @@ test_that("Module runs with defaults", {
     expect_true(colName %in% names(simTest$userGcM3))
     expect_true(all(!is.na(simTest$userGcM3[[colName]])))
   }
-
-
-  ## Check output 'ecozones' ----
-
-  expect_true(!is.null(simTest$ecozones))
-  expect_true(class(simTest$ecozones) %in% c("integer", "numeric"))
-
-  # Check that there is 1 for every pixel group
-  expect_equal(length(simTest$ecozones), nrow(simTest$level3DT))
-
-  # Check that there are no NAs
-  expect_true(all(!is.na(simTest$ecozones)))
-
-
-  ## Check output 'spatialUnits' ----
-
-  expect_true(!is.null(simTest$spatialUnits))
-  expect_true(class(simTest$spatialUnits) %in% c("integer", "numeric"))
-
-  # Check that there is 1 for every pixel group
-  expect_equal(length(simTest$spatialUnits), nrow(simTest$level3DT))
-
-  # Check that there are no NAs
-  expect_true(all(!is.na(simTest$spatialUnits)))
 
 
   ## Check output 'disturbanceEvents' -----
@@ -171,30 +137,6 @@ test_that("Module runs with defaults", {
   expect_true(inherits(simTest$disturbanceMeta, "data.table"))
 
   expect_equal(nrow(simTest$disturbanceMeta), 20)
-
-
-  ## Check output 'historicDMtype' ----
-
-  expect_true(!is.null(simTest$historicDMtype))
-  expect_true(class(simTest$historicDMtype) %in% c("integer", "numeric"))
-
-  # Check that there is 1 for every pixel group
-  expect_equal(length(simTest$historicDMtype), nrow(simTest$level3DT))
-
-  # Check that there are no NAs
-  expect_true(all(!is.na(simTest$historicDMtype)))
-
-
-  ## Check output 'lastPassDMtype' ----
-
-  expect_true(!is.null(simTest$lastPassDMtype))
-  expect_true(class(simTest$lastPassDMtype) %in% c("integer", "numeric"))
-
-  # Check that there is 1 for every pixel group
-  expect_equal(length(simTest$lastPassDMtype), nrow(simTest$level3DT))
-
-  # Check that there are no NAs
-  expect_true(all(!is.na(simTest$lastPassDMtype)))
 
 })
 

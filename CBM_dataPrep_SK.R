@@ -22,7 +22,6 @@ defineModule(sim, list(
     defineParameter(".useCache", "logical", TRUE, NA, NA,
                     "Should caching of events or module be used?")
   ),
-
   inputObjects = bindrows(
     expectsInput(
       objectName = "dbPath", objectClass = "character",
@@ -32,9 +31,6 @@ defineModule(sim, list(
       objectName = "disturbanceMatrix", objectClass = "data.frame",
       desc = "Table of disturbances with columns 'spatial_unit_id', 'disturbance_type_id', 'disturbance_matrix_id'",
       sourceURL = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_exn/disturbance_matrix_association.csv"), # FROM DEFAULTS
-    expectsInput(
-      objectName = "spinupSQL", objectClass = "dataset",
-      desc = "Table containing many necesary spinup parameters", sourceURL = NA), # FROM DEFAULTS
     expectsInput(
       objectName = "gcMeta", objectClass = "data.frame",
       sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ",
@@ -127,41 +123,46 @@ defineModule(sim, list(
       desc = "Table summarizing raster input data with 1 row for every 'masterRaster' pixel (including NAs)",
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
-        ages            = "Stand ages extracted from input 'ageRaster'",
+        ages            = "Cohort ages extracted from input 'ageRaster'",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
         gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
         ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
+      )),
+    createsOutput(
+      objectName = "standDT", objectClass = "data.table",
+      desc = paste(
+        "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
+        "Required input to CBM_core."),
+      columns = c(
+        pixelIndex      = "'masterRaster' cell index",
+        area            = "Stand area in meters",
+        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'"
+      )),
+    createsOutput(
+      objectName = "cohortDT", objectClass = "data.table",
+      desc = paste(
+        "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
+        "Required input to CBM_core."),
+      columns = c(
+        cohortID        = "Cohort ID",
+        pixelIndex      = "'masterRaster' cell index",
+        ages            = "Cohort ages extracted from input 'ageRaster'",
+        ageSpinup       = "Cohort ages raised to minimum of age 3 to use in the spinup",
+        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
       )),
     createsOutput(
       objectName = "spatialDT", objectClass = "data.table",
-      desc = paste(
-        "Table summarizing raster input data with 1 row for every 'masterRaster' pixel that is not NA",
-        "Required input to CBM_vol2biomass and CBM_core."),
+      desc = "Required by CBM_vol2biomass",
       columns = c(
         pixelIndex      = "'masterRaster' cell index",
-        pixelGroup      = "Pixel group ID",
-        ages            = "Stand ages extracted from input 'ageRaster'",
-        ageSpinup       = "Stand ages raised to minimum of age 3 to use in the spinup",
         spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
-        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'",
-        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
-      )),
-    createsOutput(
-      objectName = "level3DT", objectClass = "data.table",
-      desc = paste(
-        "Table associating pixel groups with their key attributes.",
-        "Required input to CBM_vol2biomass and CBM_core."),
-      columns = c(
-        pixelGroup      = "Pixel group ID",
-        ages            = "Stand ages extracted from input 'ageRaster' modified such that all ages are >=3",
-        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
-        gcids           = "Factor of growth curve IDs extracted from input 'gcIndexRaster'",
-        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'"
+        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'",
+        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
       )),
     createsOutput(
       objectName = "curveID", objectClass = "character",
       desc = paste(
-        "Column names in 'level3DT' that uniquely define each pixel group growth curve ID.",
+        "Column names in 'cohortDT' that uniquely define each pixel group growth curve ID.",
         "Required input to CBM_vol2biomass")),
     createsOutput(
       objectName = "gcMeta", objectClass = "data.frame",
@@ -169,16 +170,6 @@ defineModule(sim, list(
     createsOutput(
       objectName = "userGcM3", objectClass = "data.frame",
       desc = "Growth curve volumes by age"),
-    createsOutput(
-      objectName = "ecozones", objectClass = "numeric",
-      desc = paste(
-        "Ecozone IDs extracted from input 'ecoRaster' for each pixel group.",
-        "Required input to CBM_vol2biomass")),
-    createsOutput(
-      objectName = "spatialUnits", objectClass = "numeric",
-      desc = paste(
-        "Spatial unit IDs extracted from input 'spuRaster' for each pixel group.",
-        "Required input to CBM_vol2biomass")),
     createsOutput(
       objectName = "disturbanceEvents", objectClass = "data.table",
       desc = paste(
@@ -200,19 +191,7 @@ defineModule(sim, list(
         disturbance_matrix_id = "Disturbance matrix ID",
         name                  = "Disturbance name",
         description           = "Disturbance description"
-      )),
-    createsOutput(
-      objectName = "historicDMtype", objectClass = "numeric",
-      desc = paste(
-        "Historical disturbance type for each pixel group.",
-        "Examples: 1 = wildfire; 2 = clearcut.",
-        "Required input to CBM_core.")),
-    createsOutput(
-      objectName = "lastPassDMtype", objectClass = "numeric",
-      desc = paste(
-        "Last pass disturbance type for each pixel group.",
-        "Examples: 1 = wildfire; 2 = clearcut.",
-        "Required input to CBM_core."))
+      ))
   )
 ))
 
@@ -260,7 +239,7 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-  ## Create sim$allPixDT and sim$spatialDT ----
+  ## Create sim$standDT and sim$cohortDT ----
 
   # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
@@ -314,13 +293,16 @@ Init <- function(sim) {
   }
 
   # Create sim$allPixDT: Summarize input values into table
-  sim$allPixDT <- data.table::data.table(
-    pixelIndex = 1:terra::ncell(inRast$masterRaster)
+  allPixDT <- data.table::data.table(
+    pixelIndex = 1:terra::ncell(inRast$masterRaster),
+    area       = terra::values(terra::cellSize(inRast$masterRaster, unit = "m", mask = TRUE, transform = FALSE))[,1]
   )
   for (i in 1:length(pgCols)){
-    sim$allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
+    allPixDT[[names(pgCols)[[i]]]] <- terra::values(inRast[[pgCols[[i]]]])[,1]
   }
-  setkeyv(sim$allPixDT, "pixelIndex")
+  data.table::setkey(allPixDT, pixelIndex)
+
+  sim$allPixDT <- allPixDT
 
   # Create sim$spatialDT: Summarize input raster values where masterRaster is not NA
   spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
@@ -335,54 +317,34 @@ Init <- function(sim) {
     spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
   }
 
-  # Create pixel groups: groups of pixels with the same attributes
-  spatialDT$pixelGroup <- LandR::generatePixelGroups(
-    spatialDT, maxPixelGroup = 0, columns = names(pgCols)
-  )
+  # For CBM_vol2biomass
+  sim$spatialDT <- spatialDT[, .SD, .SDcols = c("pixelIndex", "spatial_unit_id", "ecozones", "gcids")]
 
-  # Keep only essential columns
-  sim$spatialDT <- spatialDT[, c("pixelIndex", "pixelGroup", names(pgCols)), with = FALSE]
+  # For CBM_core
+  sim$standDT   <- spatialDT[, .SD, .SDcols = c("pixelIndex", "area", "spatial_unit_id")]
+  data.table::setkey(sim$standDT, pixelIndex)
+
+  sim$cohortDT  <- cbind(cohortID = spatialDT$pixelIndex,
+                         spatialDT[, .SD, .SDcols = c("pixelIndex", "gcids", "ages")])
+  data.table::setkey(sim$cohortDT, cohortID)
 
   # Alter ages for the spinup
   ## Temporary fix to CBM_core issue: https://github.com/PredictiveEcology/CBM_core/issues/1
-  sim$spatialDT[, ageSpinup := ages]
-  sim$spatialDT[ageSpinup < 3, ageSpinup := 3]
+  sim$cohortDT[, ageSpinup := ages]
+  sim$cohortDT[ageSpinup < 3, ageSpinup := 3]
+
+  rm(spatialDT)
 
 
-  ## Create sim$level3DT and sim$curveID ----
-
-  level3DT <- unique(sim$spatialDT[, -("pixelIndex")])
-  setkeyv(level3DT, "pixelGroup")
+  ## Create sim$curveID ----=
 
   # Create sim$curveID
   sim$curveID <- c("gcids") #, "ecozones" # "id_ecozone"
   ##TODO add to metadata -- use in multiple modules
 
-  # Set sim$level3DT$gcids to be a factor
-  set(level3DT, j = "gcids",
-      value = factor(CBMutils::gcidsCreate(level3DT[, sim$curveID, with = FALSE])))
-
-  # Join with spinup parameters
-  setkeyv(level3DT, "spatial_unit_id")
-  spinupParameters <- as.data.table(sim$spinupSQL[, c(1, 7)])
-
-  setkeyv(spinupParameters,"id")
-  spinupParameters <- setNames(spinupParameters, replace(names(spinupParameters), names(spinupParameters) == 'id', 'spatial_unit_id'))
-  retInt <- merge.data.table(level3DT, spinupParameters,
-                             by = "spatial_unit_id", all.x = TRUE)
-  setkeyv(retInt, "pixelGroup")
-  setkeyv(level3DT, "pixelGroup")
-  sim$level3DT <- retInt
-
-
-  ## Create sim$ecozones and sim$spatialUnits ----
-
-  # create sim$ecozones and sim$spatialUnits to subset vol2biomass growth curves
-  sim$ecozones <- sim$level3DT$ecozones
-  sim$spatialUnits <- sim$level3DT$spatial_unit_id
-
 
   ## gcMeta: set 'species_id' ----
+
   if (!"species_id" %in% names(sim$gcMeta)){
 
     if (is.null(sim$CBMspecies)) stop("'CBMspecies' required to set gcMeta 'species_id")
@@ -427,7 +389,7 @@ Init <- function(sim) {
   ## Create sim$disturbanceMeta, sim$historicDMtype, and sim$lastPassDMtype ----
 
   # List disturbances possible within in each spatial unit
-  spuIDs <- sort(unique(sim$level3DT$spatial_unit_id))
+  spuIDs <- sort(unique(sim$standDT$spatial_unit_id))
   listDist <- CBMutils::spuDist(
     spuIDs = spuIDs,
     dbPath = sim$dbPath,
@@ -476,17 +438,6 @@ Init <- function(sim) {
     }))
   }
 
-  # Set sim$historicDMtype to be wildfire
-  sim$historicDMtype <- data.table::merge.data.table(
-    sim$level3DT,
-    unique(subset(listDist[, .(spatial_unit_id, disturbance_type_id, name)], tolower(name) == "wildfire")),
-    by = "spatial_unit_id"
-  )$disturbance_type_id
-
-  # Set sim$lastPassDMtype to be wildfire
-  ## TODO: this is where it could be something else then fire
-  sim$lastPassDMtype <- sim$historicDMtype
-
 
   ## Return simList ----
 
@@ -521,9 +472,7 @@ Init <- function(sim) {
         targetFile = "gcMetaEg.csv",
         fun        = data.table::fread
       )
-
-      sim$gcMeta$sw_hw <- sapply(sim$gcMeta$forest_type_id == 1, ifelse, "sw", "hw")
-
+      sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
       data.table::setkey(sim$gcMeta, gcids)
     }
   }
@@ -553,8 +502,7 @@ Init <- function(sim) {
         targetFile = "userGcM3.csv",
         fun        = data.table::fread
       )
-      names(sim$userGcM3) <- c("gcids", "Age", "MerchVolume")
-
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcids", "Age", "MerchVolume"))
       data.table::setkeyv(sim$userGcM3, c("gcids", "Age"))
     }
   }
@@ -690,7 +638,7 @@ Init <- function(sim) {
           targetFile = "SK_disturbances.csv",
           fun        = data.table::fread
         )
-        names(sim$userDist)[names(sim$userDist) == "rasterID"] <- "eventID"
+        data.table::setnames(sim$userDist, "rasterID", "eventID")
       }
     }
   }
