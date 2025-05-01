@@ -19,8 +19,7 @@ defineModule(sim, list(
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
-    defineParameter(".useCache", "logical", TRUE, NA, NA,
-                    "Should caching of events or module be used?")
+    defineParameter(".useCache", "character", c(".inputObjects", "Init"), NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
     expectsInput(
