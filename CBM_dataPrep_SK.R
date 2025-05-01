@@ -302,30 +302,22 @@ Init <- function(sim) {
   }
   data.table::setkey(allPixDT, pixelIndex)
 
+  # Save allPixDT
   sim$allPixDT <- allPixDT
 
   # Create sim$spatialDT: Summarize input raster values where masterRaster is not NA
   spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
 
-  spatialDT_isNA <- is.na(spatialDT)
-  if (any(spatialDT_isNA)){
-    for (i in 1:length(pgCols)){
-      if (any(spatialDT_isNA[, names(pgCols)[[i]]])) warning(
-        "Pixels have been excluded from the simulation where there are no values in ",
-        shQuote(pgCols[[i]]))
-    }
-    spatialDT <- spatialDT[!apply(spatialDT_isNA, 1, any),]
-  }
-
   # For CBM_vol2biomass
-  sim$spatialDT <- spatialDT[, .SD, .SDcols = c("pixelIndex", "spatial_unit_id", "ecozones", "gcids")]
+  sim$spatialDT <- spatialDT[, .SD, .SDcols = c("spatial_unit_id", "ecozones", "gcids")]
+  sim$spatialDT <- unique(sim$spatialDT[!apply(is.na(sim$spatialDT), 1, any),])
 
   # For CBM_core
-  sim$standDT   <- spatialDT[, .SD, .SDcols = c("pixelIndex", "area", "spatial_unit_id")]
+  sim$standDT <- spatialDT[, .SD, .SDcols = c("pixelIndex", "area", "spatial_unit_id")]
   data.table::setkey(sim$standDT, pixelIndex)
 
-  sim$cohortDT  <- cbind(cohortID = spatialDT$pixelIndex,
-                         spatialDT[, .SD, .SDcols = c("pixelIndex", "gcids", "ages")])
+  sim$cohortDT <- cbind(cohortID = spatialDT$pixelIndex,
+                        spatialDT[, .SD, .SDcols = c("pixelIndex", "gcids", "ages")])
   data.table::setkey(sim$cohortDT, cohortID)
 
   # Alter ages for the spinup
