@@ -38,11 +38,6 @@ defineModule(sim, list(
       objectName = "gcMetaURL", objectClass = "character",
       desc = "URL for gcMeta"),
     expectsInput(
-      objectName = "CBMspecies", objectClass = "dataset",
-      desc = paste(
-        "CBM-CFS3 'species.csv' table with columns 'species_id', 'species_name'",
-        "'Required if 'gcMeta' does not contain a 'species_id' column.")),
-    expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
       desc = "Growth curve volumes by age",
       sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
@@ -334,50 +329,37 @@ Init <- function(sim) {
   ##TODO add to metadata -- use in multiple modules
 
 
-  ## gcMeta: set 'species_id' ----
+  ## gcMeta: set 'species_id' and 'sw_hw' columns ----
 
-  if (!"species_id" %in% names(sim$gcMeta)){
+  if (any(!c("species_id", "sw_hw") %in% names(sim$gcMeta))){
 
-    if (is.null(sim$CBMspecies)) stop("'CBMspecies' required to set gcMeta 'species_id")
-    if (!"species" %in% names(sim$gcMeta)) stop("gcMeta requires 'species' column to determine 'species_id'")
+    if (!"species_name" %in% names(sim$gcMeta)) stop(
+      "gcMeta requires either the 'species_id' and 'sw_hw' columns ",
+      "or the 'species_name' column to retrieve species data with CBMutils::sppMatch")
 
-    gcMeta <- sim$gcMeta
-    if (!inherits(gcMeta, "data.table")){
-      gcMeta <- tryCatch(
-        data.table::as.data.table(gcMeta),
+    if (!inherits(sim$gcMeta, "data.table")){
+      sim$gcMeta <- tryCatch(
+        data.table::as.data.table(sim$gcMeta),
         error = function(e) stop(
-          "'gcMeta' could not be converted to data.table: ", e$message, call. = FALSE))
+          "gcMeta could not be converted to data.table: ", e$message, call. = FALSE))
     }
 
-    CBMspecies <- sim$CBMspecies
-    if (!inherits(CBMspecies, "data.table")){
-      CBMspecies <- tryCatch(
-        data.table::as.data.table(CBMspecies),
-        error = function(e) stop(
-          "'CBMspecies' could not be converted to data.table: ", e$message, call. = FALSE))
-    }
+    sppMatchTable <- CBMutils::sppMatch(
+      sim$gcMeta$species_name, return = c("CBM_speciesID", "Broadleaf"))[, .(
+        species_id = CBM_speciesID,
+        sw_hw      = data.table::fifelse(Broadleaf, "hw", "sw")
+      )]
 
-    gcMeta[,     name_lower := trimws(tolower(species))]
-    CBMspecies[, name_lower := trimws(tolower(species_name))]
-
-    gcMeta <- merge(
-      gcMeta, CBMspecies[, .(name_lower, species_id)],
-      by = "name_lower", all.x = TRUE)
-
-    if (any(is.na(gcMeta$species_id))) stop(
-      "gcMeta contains species name(s) not found in CBMspecies: ",
-      paste(shQuote(unique(subset(gcMeta, is.na(species_id))$name)), collapse = ", "))
-
-    sim$gcMeta <- gcMeta[, c(names(sim$gcMeta), "species_id"), with = FALSE]
-    data.table::setkey(sim$gcMeta, gcids)
-
-    rm(gcMeta)
-    rm(CBMspecies)
+    sim$gcMeta <- cbind(
+      sim$gcMeta[, .SD, .SDcols = !intersect(c("species_id", "sw_hw"), names(sim$gcMeta))],
+      sppMatchTable
+    )
+    rm(sppMatchTable)
 
   }
 
 
-  ## Create sim$disturbanceMeta, sim$historicDMtype, and sim$lastPassDMtype ----
+  ## Create sim$disturbanceMeta ----
 
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$standDT$spatial_unit_id))
@@ -463,8 +445,12 @@ Init <- function(sim) {
         targetFile = "gcMetaEg.csv",
         fun        = data.table::fread
       )
-      sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
       data.table::setkey(sim$gcMeta, gcids)
+
+      # Create column for matching species names with CBMutils::sppMatch
+      ## TODO: Consider adding these matches to CBMutils::sppMatch
+      sim$gcMeta[, species_name := species]
+      sim$gcMeta$species_name[sim$gcMeta$species_name == "White birch"] <- "Paper birch"
     }
   }
 
