@@ -329,13 +329,12 @@ Init <- function(sim) {
   ##TODO add to metadata -- use in multiple modules
 
 
-  ## gcMeta: set 'species_id' and 'sw_hw' columns ----
+  ## gcMeta: get species attributes ----
 
-  if (any(!c("species_id", "sw_hw") %in% names(sim$gcMeta))){
+  if (any(!c("species_id", "sw_hw", "canfi_species", "genus") %in% names(sim$gcMeta))){
 
     if (!"species_name" %in% names(sim$gcMeta)) stop(
-      "gcMeta requires either the 'species_id' and 'sw_hw' columns ",
-      "or the 'species_name' column to retrieve species data with CBMutils::sppMatch")
+      "gcMeta requires the 'species_name' column to retrieve species data with CBMutils::sppMatch")
 
     if (!inherits(sim$gcMeta, "data.table")){
       sim$gcMeta <- tryCatch(
@@ -345,17 +344,17 @@ Init <- function(sim) {
     }
 
     sppMatchTable <- CBMutils::sppMatch(
-      sim$gcMeta$species_name, return = c("CBM_speciesID", "Broadleaf"))[, .(
-        species_id = CBM_speciesID,
-        sw_hw      = data.table::fifelse(Broadleaf, "hw", "sw")
+      sim$gcMeta$species_name, return = c("CBM_speciesID", "Broadleaf", "CanfiCode", "NFI"))[, .(
+        species_id    = CBM_speciesID,
+        sw_hw         = data.table::fifelse(Broadleaf, "hw", "sw"),
+        canfi_species = CanfiCode,
+        genus         = sapply(strsplit(NFI, "_"), `[[`, 1)
       )]
 
     sim$gcMeta <- cbind(
-      sim$gcMeta[, .SD, .SDcols = !intersect(c("species_id", "sw_hw"), names(sim$gcMeta))],
-      sppMatchTable
-    )
+      sim$gcMeta[, .SD, .SDcols = setdiff(names(sim$gcMeta), names(sppMatchTable))],
+      sppMatchTable)
     rm(sppMatchTable)
-
   }
 
 
