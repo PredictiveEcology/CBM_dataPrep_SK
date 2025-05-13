@@ -12,21 +12,13 @@ download.file(
   tempScript, quiet = TRUE)
 source(tempScript)
 
-# Set up testing global options
+# Set up testing directories and global options
 SpaDEStestSetGlobalOptions()
+spadesTestPaths <- SpaDEStestSetUpDirectories()
 
-# Set up testing directories
-spadesTestPaths <- SpaDEStestSetUpDirectories(require = "googledrive")
+# Install required packages
+withr::with_options(c(timeout = 600), Require::Install(
+  c(SpaDES.core::packages(modules = basename(getwd()), paths = "..")[[1]],
+    "SpaDES.project", "googledrive")
+))
 
-
-## Download standard inputs that are usually provided by CBM_defaults.
-
-# Download CBM-CFS3 database usually provided by CBM_defaults
-if (!file.exists(file.path(spadesTestPaths$temp$inputs, "dbPath.db"))){
-  download.file(
-    url      = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db",
-    destfile = file.path(spadesTestPaths$temp$inputs, "dbPath.db"),
-    mode     = "wb",
-    quiet    = TRUE
-  )
-}

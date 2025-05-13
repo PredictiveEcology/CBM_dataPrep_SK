@@ -1,13 +1,4 @@
 
-## SET UP ----
-
-  # Install required packages
-  ## Required because module is not an R package
-  install.packages(
-    c("testthat", "SpaDES.core", "SpaDES.project"),
-    repos = unique(c("predictiveecology.r-universe.dev", getOption("repos"))))
-
-
 ## OPTIONS ----
 
   # Suppress warnings from calls to setupProject, simInit, and spades
@@ -38,6 +29,6 @@
   ## Run module with a smaller study area
   testthat::test_file("tests/testthat/test-1-module_2-withAOI.R")
 
-  ## Run multi module integration test
-  testthat::test_file("tests/testthat/test-2-multiModule_SK-small_1998-2000.R")
+  ## Run integration test
+  testthat::test_file("tests/testthat/test-2-integration_SK-small_1998-2000.R")
 
