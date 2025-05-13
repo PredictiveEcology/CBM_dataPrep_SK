@@ -2,13 +2,11 @@ on:
   push:
     branches:
       - main
-      - development
   pull_request:
     branches:
       - main
-      - development
 
-name: testthat-module
+name: testthat-intg
 
 jobs:
   testthat-module:
@@ -80,6 +78,6 @@ jobs:
       - name: Run testthat
         run: |
           googledrive::drive_auth(path = Sys.getenv("GOOGLE_AUTH"))
-          testthat::test_dir("tests/testthat", filter = "integration", invert = TRUE, stop_on_failure = TRUE)
+          testthat::test_dir("tests/testthat", filter = "integration", stop_on_failure = TRUE)
         shell: Rscript {0}
 
