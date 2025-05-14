@@ -3,7 +3,7 @@ defineModule(sim, list(
   description = "A data preparation module to format and prepare user-provided input to the SpaDES forest-carbon modelling family.",
   keywords = NA,
   authors = c(
-    person("Celine",  "Boisvenue", email = "Celine.Boisvenue@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person("Céline",  "Boisvenue", email = "celine.boisvenue@nrcan-rncan.gc.ca", role = c("aut", "cre")),
     person("Alex M",  "Chubaty",   email = "achubaty@for-cast.ca",               role = c("ctb")),
     person("Camille", "Giuliano",  email = "camsgiu@gmail.com",                  role = c("ctb")),
     person("Susan",   "Murray",    email = "murray.e.susan@gmail.com",           role = c("ctb"))
