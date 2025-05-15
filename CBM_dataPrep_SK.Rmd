@@ -71,7 +71,7 @@ There are 468 unique disturbance matrices identified in the defaults. Since root
 
 There are a series of helper functions in [CBMutils](https://github.com/PredictiveEcology/CBMutils.git) to help users explore and navigate disturbance matrices: 
 - [spuDist](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L275) for extracting the disturbances in a specific spatial unit,
-- [simDist()](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L458) which lists the distrubances used in a simulation, and
+- [simDist()](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L458) which lists the disturbances used in a simulation, and
 - [seeDist()](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L388) which pulls out the proportions from source to sink pools.
 
 Because growth curves can be identified by strata, multiple columns can be used to identify growth curves using the `curveID` object. In our example, only **gcids** is used.
