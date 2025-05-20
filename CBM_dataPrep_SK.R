@@ -17,7 +17,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "data.table", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development (>=2.0.1)",
+    "PredictiveEcology/CBMutils@development (>=2.0.3)",
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(
@@ -364,7 +364,7 @@ Init <- function(sim) {
 
   # List disturbances possible within in each spatial unit
   spuIDs <- sort(unique(sim$standDT$spatial_unit_id))
-  listDist <- CBMutils::spuDist(
+  listDist <- CBMutils::spuDistList(
     spuIDs = spuIDs,
     dbPath = sim$dbPath,
     disturbance_matrix_association = sim$disturbanceMatrix
