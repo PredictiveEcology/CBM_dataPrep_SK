@@ -51,7 +51,7 @@ test_that("Multi module: SK-small 1998-2000", {
         # Align SK master raster with study area
         mrSource <- terra::rast(
           reproducible::preProcess(
-            destinationPath = spadesTestPaths$temp$inputs,
+            destinationPath = spadesTestPaths$inputPath,
             url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
             targetFile      = "ldSp_TestArea.tif"
           )$targetFilePath)
