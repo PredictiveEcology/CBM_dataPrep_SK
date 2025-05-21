@@ -29,7 +29,20 @@ test_that("Module runs with study AOI", {
 
       require = "sf",
 
-      dbPath     = {
+      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
+      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
+
+      # Set study area
+      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
+
+      # Test matching user disturbances with CBM-CFS3 disturbances
+      disturbanceMeta = rbind(
+        data.frame(eventID = 1, wholeStand = 1, name = "Wildfire"),
+        data.frame(eventID = 2, wholeStand = 1, name = "Clearcut harvesting without salvage"),
+        data.frame(eventID = 3, wholeStand = 0, name = "Generic 20% mortality"),
+        data.frame(eventID = 4, wholeStand = 1, name = "Deforestation")
+      ),
+      dbPath = {
         dbPath <- file.path(spadesTestPaths$inputPath, "dbPath.db")
         if (!file.exists(dbPath)) download.file(
           url      = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db",
@@ -37,20 +50,7 @@ test_that("Module runs with study AOI", {
           mode     = "wb",
           quiet    = TRUE)
         dbPath
-      },
-      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
-      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
-      disturbanceMatrix = read.csv(file.path(spadesTestPaths$testdata, "disturbance_matrix_association.csv")),
-
-      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
-
-      # Test matching user disturbances with CBM-CFS3 disturbances
-      userDist = rbind(
-        data.frame(eventID = 1, wholeStand = 1, name = "Wildfire"),
-        data.frame(eventID = 2, wholeStand = 1, name = "Clearcut harvesting without salvage"),
-        data.frame(eventID = 3, wholeStand = 0, name = "Generic 20% mortality"),
-        data.frame(eventID = 4, wholeStand = 1, name = "Deforestation")
-      )
+      }
     )
   )
 
@@ -162,45 +162,33 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$disturbanceMeta))
   expect_true(inherits(simTest$disturbanceMeta, "data.table"))
 
-  expect_equal(nrow(simTest$disturbanceMeta), 8)
+  expect_equal(nrow(simTest$disturbanceMeta), 4)
 
   # Check that disturbances have been matched correctly
   rowsExpect <- rbind(
     data.frame(
-      spatial_unit_id       = 28,
-      eventID               = 1,
-      wholeStand            = 1,
-      sw_hw                 = c("sw", "hw"),
-      name                  = "Wildfire",
-      disturbance_type_id   = 1,
-      disturbance_matrix_id = c(371, 851)
+      eventID             = 1,
+      wholeStand          = 1,
+      name                = "Wildfire",
+      disturbance_type_id = 1
     ),
     data.frame(
-      spatial_unit_id       = 28,
-      eventID               = 2,
-      wholeStand            = 1,
-      sw_hw                 = c("sw", "hw"),
-      name                  = "Clearcut harvesting without salvage",
-      disturbance_type_id   = 204,
-      disturbance_matrix_id = c(160, 640)
+      eventID             = 2,
+      wholeStand          = 1,
+      name                = "Clearcut harvesting without salvage",
+      disturbance_type_id = 204
     ),
     data.frame(
-      spatial_unit_id       = 28,
-      eventID               = 3,
-      wholeStand            = 0,
-      sw_hw                 = c("sw", "hw"),
-      name                  = "Generic 20% mortality",
-      disturbance_type_id   = 168,
-      disturbance_matrix_id = c(91, 571)
+      eventID             = 3,
+      wholeStand          = 0,
+      name                = "Generic 20% mortality",
+      disturbance_type_id = 168
     ),
     data.frame(
-      spatial_unit_id       = 28,
-      eventID               = 4,
-      wholeStand            = 1,
-      sw_hw                 = c("sw", "hw"),
-      name                  = "Deforestation",
-      disturbance_type_id   = 7,
-      disturbance_matrix_id = c(26, 506)
+      eventID             = 4,
+      wholeStand          = 1,
+      name                = "Deforestation",
+      disturbance_type_id = 7
     )
   )
 
