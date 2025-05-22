@@ -15,7 +15,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "data.table", "sf", "terra",
     "reproducible (>=2.1.2)" ,
-    "PredictiveEcology/CBMutils@development (>=2.0.1)",
+    "PredictiveEcology/CBMutils@c947998f065ad0f1796fcaecc5e6b5ffdf1df64e", # Temporary on main branch
     "PredictiveEcology/LandR@development"
   ),
   parameters = rbind(

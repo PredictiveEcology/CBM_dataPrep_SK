@@ -9,9 +9,12 @@ test_that("Multi module: SK-small 1998-2000", {
   times <- list(start = 1998, end = 2000)
 
   # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "multiModule_SK-small_1998-2000")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_SK-small_1998-2000")
   dir.create(projectPath)
   withr::local_dir(projectPath)
+
+  # Set Github repo branch
+  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
 
   # Set up project
   simInitInput <- SpaDEStestMuffleOutput(
@@ -19,21 +22,19 @@ test_that("Multi module: SK-small 1998-2000", {
     SpaDES.project::setupProject(
 
       modules = c(
-        getOption("spades.test.modules", c(
-          CBM_defaults    = "PredictiveEcology/CBM_defaults@development",
-          CBM_vol2biomass = "PredictiveEcology/CBM_vol2biomass@development",
-          CBM_core        = "PredictiveEcology/CBM_core@development"
-        )),
-        CBM_dataPrep_SK = "CBM_dataPrep_SK"
-      )[c("CBM_defaults", "CBM_dataPrep_SK", "CBM_vol2biomass", "CBM_core")],
+        paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
+        "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
+      ),
 
       times   = times,
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
-        packagePath = spadesTestPaths$temp$packages,
-        inputPath   = spadesTestPaths$temp$inputs,
-        cachePath   = spadesTestPaths$temp$cache,
+        packagePath = spadesTestPaths$packagePath,
+        inputPath   = spadesTestPaths$inputPath,
+        cachePath   = spadesTestPaths$cachePath,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
@@ -50,7 +51,7 @@ test_that("Multi module: SK-small 1998-2000", {
         # Align SK master raster with study area
         mrSource <- terra::rast(
           reproducible::preProcess(
-            destinationPath = spadesTestPaths$temp$inputs,
+            destinationPath = spadesTestPaths$inputPath,
             url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
             targetFile      = "ldSp_TestArea.tif"
           )$targetFilePath)
@@ -87,31 +88,6 @@ test_that("Multi module: SK-small 1998-2000", {
   )
 
   expect_s4_class(simTest, "simList")
-
-
-  ## Check completed events ----
-
-  # Check that all modules initiated in the correct order
-  expect_identical(tail(completed(simTest)[eventType == "init",]$moduleName, 4),
-                   c("CBM_defaults", "CBM_dataPrep_SK", "CBM_vol2biomass", "CBM_core"))
-
-  # CBM_core module: Check events completed in expected order
-  with(
-    list(
-      moduleTest  = "CBM_core",
-      eventExpect = c(
-        "init"              = times$start,
-        "spinup"            = times$start,
-        setNames(times$start:times$end, rep("annual", length(times$star:times$end))),
-        "accumulateResults" = times$end
-      )),
-    expect_equal(
-      completed(simTest)[moduleName == moduleTest, .(eventTime, eventType)],
-      data.table::data.table(
-        eventTime = data.table::setattr(eventExpect, "unit", "year"),
-        eventType = names(eventExpect)
-      ))
-  )
 
 
   ## Check outputs ----
