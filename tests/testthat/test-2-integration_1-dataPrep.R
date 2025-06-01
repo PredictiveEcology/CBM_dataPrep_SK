@@ -1,56 +1,62 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Module runs with study AOI", {
+test_that("Integration: CBM_dataPrep and disturbances", {
 
   ## Run simInit and spades ----
 
+  # Set times
+  times <- list(start = 1998, end = 2000)
+
   # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "2-withAOI")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "2-intg_1-dataPrep")
   dir.create(projectPath)
   withr::local_dir(projectPath)
+
+  # Set Github repo branch
+  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
 
   # Set up project
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
-      times = list(start = 1998, end = 2000),
+      times = times,
 
-      modules = "CBM_dataPrep_SK",
+      modules = c(
+        "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME"))
+      ),
       paths   = list(
         projectPath = projectPath,
-        modulePath  = spadesTestPaths$modulePath,
+        modulePath  = spadesTestPaths$temp$modules,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
         outputPath  = file.path(projectPath, "outputs")
       ),
 
-      require = "sf",
-
-      ecoLocator = sf::st_read(file.path(spadesTestPaths$testdata, "ecoLocator.shp"), quiet = TRUE),
-      spuLocator = sf::st_read(file.path(spadesTestPaths$testdata, "spuLocator.shp"), quiet = TRUE),
+      # Set required packages for project set up
+      require = "terra",
 
       # Set study area
-      masterRaster = file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif"),
+      masterRaster = terra::rast(
+        extent     = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
+        resolution = 30,
+        crs        = "EPSG:3979",
+        vals       = 1
+      ),
 
-      # Test matching user disturbances with CBM-CFS3 disturbances
+      # Set disturbances
+      ## Test matching user disturbances with CBM-CFS3 disturbances
       disturbanceMeta = rbind(
         data.frame(eventID = 1, wholeStand = 1, name = "Wildfire"),
         data.frame(eventID = 2, wholeStand = 1, name = "Clearcut harvesting without salvage"),
         data.frame(eventID = 3, wholeStand = 0, name = "Generic 20% mortality"),
-        data.frame(eventID = 4, wholeStand = 1, name = "Deforestation")
+        data.frame(eventID = 4, wholeStand = 1, name = "Deforestation"),
+        data.frame(eventID = 5, wholeStand = 0, name = "Generic 20% mortality")
       ),
-      dbPath = {
-        dbPath <- file.path(spadesTestPaths$inputPath, "dbPath.db")
-        if (!file.exists(dbPath)) download.file(
-          url      = "https://raw.githubusercontent.com/cat-cfs/libcbm_py/main/libcbm/resources/cbm_defaults_db/cbm_defaults_v1.2.8340.362.db",
-          destfile = dbPath,
-          mode     = "wb",
-          quiet    = TRUE)
-        dbPath
-      }
+      disturbanceRasters = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
     )
   )
 
@@ -78,13 +84,10 @@ test_that("Module runs with study AOI", {
     expect_true(colName %in% names(simTest$standDT))
     expect_true(all(!is.na(simTest$standDT[[colName]])))
   }
-
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
-  # Expect that there is 1 row for every non-NA cell in masterRaster
-  mrValues <- terra::values(terra::rast(file.path(spadesTestPaths$testdata, "masterRaster-withAOI.tif")))
-  expect_equal(nrow(simTest$standDT), sum(!is.na(mrValues[,1])))
-  expect_equal(simTest$standDT$pixelIndex, which(!is.na(mrValues[,1])))
+  # Check number of valid pixels (no NAs in any column)
+  expect_equal(nrow(simTest$standDT), 6763)
 
 
   ## Check output 'cohortDT' ----
@@ -105,17 +108,8 @@ test_that("Module runs with study AOI", {
                simTest$cohortDT$ages[simTest$cohortDT$ages >= 3])
   expect_true(all(simTest$ageSpinup[simTest$cohortDT$ages < 3] == 3))
 
-  # Expect that there is 1 row for every non-NA cell in masterRaster
-  expect_equal(nrow(simTest$cohortDT), sum(!is.na(mrValues[,1])))
-  expect_equal(simTest$cohortDT$pixelIndex, which(!is.na(mrValues[,1])))
-
-
-  ## Check output 'curveID' ----
-
-  expect_true(!is.null(simTest$curveID))
-  expect_true(length(simTest$curveID) >= 1)
-  expect_true("gcids" %in% simTest$curveID)
-  expect_true(all(simTest$curveID %in% names(simTest$cohortDT)))
+  # Check number of valid cohorts (no NAs in any column)
+  expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))
 
 
   ## Check output 'gcMeta' ----
@@ -151,10 +145,8 @@ test_that("Module runs with study AOI", {
     expect_true(all(!is.na(simTest$disturbanceEvents[[colName]])))
   }
 
-  expect_true(all(simTest$disturbanceEvents$pixelIndex %in% simTest$allPixDT$pixelIndex))
-  expect_true(all(simTest$disturbanceEvents$year       %in% 1998:2000))
-
-  expect_equal(nrow(simTest$disturbanceEvents), 1393)
+  expect_true(all(simTest$disturbanceEvents$year %in% 1985:2011))
+  expect_equal(nrow(simTest$disturbanceEvents), 1374)
 
 
   ## Check output 'disturbanceMeta' ----
@@ -162,7 +154,7 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$disturbanceMeta))
   expect_true(inherits(simTest$disturbanceMeta, "data.table"))
 
-  expect_equal(nrow(simTest$disturbanceMeta), 4)
+  expect_equal(nrow(simTest$disturbanceMeta), 5)
 
   # Check that disturbances have been matched correctly
   rowsExpect <- rbind(
@@ -189,6 +181,12 @@ test_that("Module runs with study AOI", {
       wholeStand          = 1,
       name                = "Deforestation",
       disturbance_type_id = 7
+    ),
+    data.frame(
+      eventID             = 5,
+      wholeStand          = 0,
+      name                = "Generic 20% mortality",
+      disturbance_type_id = 168
     )
   )
 

@@ -1,15 +1,15 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Multi module: SK-small 1998-2000", {
+test_that("Integration: CBM: SK 1985-2011", {
 
   ## Run simInit and spades ----
 
   # Set times
-  times <- list(start = 1998, end = 2000)
+  times <- list(start = 1985, end = 2011)
 
   # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_SK-small_1998-2000")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_2-CBM_2-SK")
   dir.create(projectPath)
   withr::local_dir(projectPath)
 
@@ -21,14 +21,15 @@ test_that("Multi module: SK-small 1998-2000", {
 
     SpaDES.project::setupProject(
 
+      times = times,
+
       modules = c(
         paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
         "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_dataPrep@",    Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
       ),
-
-      times   = times,
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
@@ -38,36 +39,18 @@ test_that("Multi module: SK-small 1998-2000", {
         outputPath  = file.path(projectPath, "outputs")
       ),
 
-      require = c("terra", "reproducible"),
+      # Set disturbances
+      ## Test matching user disturbances with CBM-CFS3 disturbances
+      disturbanceMeta = rbind(
+        data.frame(eventID = 1, wholeStand = 1, name = "Wildfire"),
+        data.frame(eventID = 2, wholeStand = 1, name = "Clearcut harvesting without salvage"),
+        data.frame(eventID = 3, wholeStand = 0, name = "Generic 20% mortality"),
+        data.frame(eventID = 4, wholeStand = 1, name = "Deforestation"),
+        data.frame(eventID = 5, wholeStand = 0, name = "Generic 20% mortality")
+      ),
+      disturbanceRasters = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
 
-      masterRaster = {
-
-        # Set study area extent and resolution
-        mrAOI <- list(
-          ext = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-          res = 30
-        )
-
-        # Align SK master raster with study area
-        mrSource <- terra::rast(
-          reproducible::preProcess(
-            destinationPath = spadesTestPaths$inputPath,
-            url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
-            targetFile      = "ldSp_TestArea.tif"
-          )$targetFilePath)
-
-        reproducible::postProcess(
-          mrSource,
-          to = terra::rast(
-            extent     = mrAOI$ext,
-            resolution = mrAOI$res,
-            crs        = terra::crs(mrSource),
-            vals       = 1
-          ),
-          method = "near"
-        ) |> terra::classify(cbind(0, NA))
-      },
-
+      # Set outputs
       outputs = as.data.frame(expand.grid(
         objectName = c("cbmPools", "NPP"),
         saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))
