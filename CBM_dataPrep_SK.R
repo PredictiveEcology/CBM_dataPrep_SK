@@ -25,12 +25,12 @@ defineModule(sim, list(
   ),
   inputObjects = bindrows(
     expectsInput(
-      objectName = "gcMeta", objectClass = "data.frame",
+      objectName = "userGcMeta", objectClass = "data.frame",
       sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ",
       desc = "Growth curve metadata"),
     expectsInput(
-      objectName = "gcMetaURL", objectClass = "character",
-      desc = "URL for gcMeta"),
+      objectName = "userGcMetaURL", objectClass = "character",
+      desc = "URL for userGcMeta"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
       desc = "Growth curve volumes by age",
@@ -140,16 +140,15 @@ defineModule(sim, list(
         pixelIndex      = "'masterRaster' cell index",
         ages            = "Cohort ages extracted from input 'ageRaster'",
         ageSpinup       = "Cohort ages raised to minimum of age 3 to use in the spinup",
-        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
+        gcID            = "Growth curve IDs extracted from input 'gcIndexRaster'",
+        gcids           = "Growth curve ID unique to every spatial unit"
       )),
     createsOutput(
-      objectName = "spatialDT", objectClass = "data.table",
-      desc = "Required by CBM_vol2biomass",
-      columns = c(
-        pixelIndex      = "'masterRaster' cell index",
-        spatial_unit_id = "Spatial unit IDs extracted from input 'spuLocator'",
-        ecozones        = "Ecozone IDs extracted from input 'ecoRaster'",
-        gcids           = "Growth curve IDs extracted from input 'gcIndexRaster'"
+      objectName = "userGcSPU", objectClass = "data.table",
+      desc = "Table of growth curves and spatial unit combinations in the cohorts.",
+      columns = list(
+        gcID            = "Growth curve ID",
+        spatial_unit_id = "CBM-CFS3 spatial unit ID"
       )),
     createsOutput(
       objectName = "curveID", objectClass = "character",
@@ -157,7 +156,7 @@ defineModule(sim, list(
         "Column names in 'cohortDT' that uniquely define each pixel group growth curve ID.",
         "Required input to CBM_vol2biomass")),
     createsOutput(
-      objectName = "gcMeta", objectClass = "data.frame",
+      objectName = "userGcMeta", objectClass = "data.frame",
       desc = "Growth curve metadata"),
     createsOutput(
       objectName = "userGcM3", objectClass = "data.frame",
@@ -221,10 +220,13 @@ Init <- function(sim) {
 
   ## Create sim$standDT and sim$cohortDT ----
 
+  # Set sim$curveID
+  sim$curveID <- "gcID"
+
   # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
     ages            = "ageRaster",
-    gcids           = "gcIndexRaster",
+    gcID            = "gcIndexRaster",
     ecozones        = "ecoLocator",
     spatial_unit_id = "spuLocator"
   )
@@ -289,15 +291,18 @@ Init <- function(sim) {
   spatialDT <- sim$allPixDT[!is.na(terra::values(inRast$masterRaster)[,1]),]
 
   # For CBM_vol2biomass
-  sim$spatialDT <- spatialDT[, .SD, .SDcols = c("spatial_unit_id", "ecozones", "gcids")]
-  sim$spatialDT <- unique(sim$spatialDT[!apply(is.na(sim$spatialDT), 1, any),])
+  # Define unique growth curves with spatial_unit_id
+  spatialDT$gcids <- factor(
+    CBMutils::gcidsCreate(spatialDT[, .SD, .SDcols = c("spatial_unit_id", sim$curveID)])
+  )
+  sim$userGcSPU <- unique(spatialDT[, .SD, .SDcols = c("spatial_unit_id", sim$curveID)])
 
   # For CBM_core
   sim$standDT <- spatialDT[, .SD, .SDcols = c("pixelIndex", "area", "spatial_unit_id")]
   data.table::setkey(sim$standDT, pixelIndex)
 
   sim$cohortDT <- cbind(cohortID = spatialDT$pixelIndex,
-                        spatialDT[, .SD, .SDcols = c("pixelIndex", "gcids", "ages")])
+                        spatialDT[, .SD, .SDcols = c("pixelIndex", "ages", "gcids", sim$curveID)])
   data.table::setkey(sim$cohortDT, cohortID)
 
   # Alter ages for the spinup
@@ -308,29 +313,22 @@ Init <- function(sim) {
   rm(spatialDT)
 
 
-  ## Create sim$curveID ----=
+  ## Prepare sim$userGcMeta ----
 
-  # Create sim$curveID
-  sim$curveID <- c("gcids") #, "ecozones" # "id_ecozone"
-  ##TODO add to metadata -- use in multiple modules
+  if (any(!c("species_id", "sw_hw", "canfi_species", "genus") %in% names(sim$userGcMeta))){
 
+    if (!"species" %in% names(sim$userGcMeta)) stop(
+      "userGcMeta requires the 'species' column to retrieve species data with CBMutils::sppMatch")
 
-  ## Prepare sim$gcMeta ----
-
-  if (any(!c("species_id", "sw_hw", "canfi_species", "genus") %in% names(sim$gcMeta))){
-
-    if (!"species" %in% names(sim$gcMeta)) stop(
-      "gcMeta requires the 'species' column to retrieve species data with CBMutils::sppMatch")
-
-    if (!inherits(sim$gcMeta, "data.table")){
-      sim$gcMeta <- tryCatch(
-        data.table::as.data.table(sim$gcMeta),
+    if (!inherits(sim$userGcMeta, "data.table")){
+      sim$userGcMeta <- tryCatch(
+        data.table::as.data.table(sim$userGcMeta),
         error = function(e) stop(
-          "gcMeta could not be converted to data.table: ", e$message, call. = FALSE))
+          "userGcMeta could not be converted to data.table: ", e$message, call. = FALSE))
     }
 
     sppMatchTable <- CBMutils::sppMatch(
-      sim$gcMeta$species,
+      sim$userGcMeta$species,
       return     = c("CBM_speciesID", "Broadleaf", "CanfiCode", "NFI"),
       otherNames = list(
         "White birch" = "Paper birch"
@@ -341,8 +339,8 @@ Init <- function(sim) {
         genus         = sapply(strsplit(NFI, "_"), `[[`, 1)
       )]
 
-    sim$gcMeta <- cbind(
-      sim$gcMeta[, .SD, .SDcols = setdiff(names(sim$gcMeta), names(sppMatchTable))],
+    sim$userGcMeta <- cbind(
+      sim$userGcMeta[, .SD, .SDcols = setdiff(names(sim$userGcMeta), names(sppMatchTable))],
       sppMatchTable)
     rm(sppMatchTable)
   }
@@ -390,35 +388,35 @@ Init <- function(sim) {
   ## Read inputs ----
 
   # Growth and yield metadata
-  if (!suppliedElsewhere("gcMeta", sim)){
+  if (!suppliedElsewhere("userGcMeta", sim)){
 
-    if (suppliedElsewhere("gcMetaURL", sim) &
-        !identical(sim$gcMetaURL, extractURL("gcMeta"))){
+    if (suppliedElsewhere("userGcMetaURL", sim) &
+        !identical(sim$userGcMetaURL, extractURL("userGcMeta"))){
 
-      sim$gcMeta <- prepInputs(
+      sim$userGcMeta <- prepInputs(
         destinationPath = inputPath(sim),
-        url = sim$gcMetaURL,
+        url = sim$userGcMetaURL,
         fun = data.table::fread
       )
 
     }else{
 
-      if (!suppliedElsewhere("gcMetaURL", sim, where = "user")) message(
-        "User has not supplied growth curve metadata ('gcMeta' or 'gcMetaURL'). ",
+      if (!suppliedElsewhere("userGcMetaURL", sim, where = "user")) message(
+        "User has not supplied growth curve metadata ('userGcMeta' or 'userGcMetaURL'). ",
         "Default for Saskatchewan will be used.")
 
-      sim$gcMeta <- prepInputs(
+      sim$userGcMeta <- prepInputs(
         destinationPath = inputPath(sim),
-        url        = extractURL("gcMeta"),
+        url        = extractURL("userGcMeta"),
         targetFile = "gcMetaEg.csv",
         fun        = data.table::fread
       )
-      data.table::setkey(sim$gcMeta, gcids)
+      data.table::setnames(sim$userGcMeta, "gcids", "gcID")
+      data.table::setkey(sim$userGcMeta, gcID)
     }
   }
 
   # Growth and yield table
-  ## TODO add a data manipulation to adjust if the m3 are not given on a yearly basis.
   if (!suppliedElsewhere("userGcM3", sim)){
 
     if (suppliedElsewhere("userGcM3URL", sim) &
@@ -442,8 +440,8 @@ Init <- function(sim) {
         targetFile = "userGcM3.csv",
         fun        = data.table::fread
       )
-      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcids", "Age", "MerchVolume"))
-      data.table::setkeyv(sim$userGcM3, c("gcids", "Age"))
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcID", "Age", "MerchVolume"))
+      data.table::setkeyv(sim$userGcM3, c("gcID", "Age"))
     }
   }
 
@@ -527,6 +525,24 @@ Init <- function(sim) {
         fun        = terra::rast
       ) |> Cache()
     }
+  }
+
+  # Remove duplicate growth curves
+  ## Curves will be made unique to each spatial unit in CBM_vol2biomass
+  ## This prevents alignment issues that can occur between gcIndexRaster
+  ## and the ecozone, spatial units, or admin boundary layers
+  if (all(!suppliedElsewhere(c(
+    "userGcMeta", "userGcMetaURL", "userGcM3", "userGcM3URL", "gcIndexRaster", "gxIndexRasterURL"
+    ), sim, where = "user"))){
+
+    gcRcl <- data.frame(
+      from = sim$userGcMeta$gcID[11:nrow(sim$userGcMeta)],
+      to   = rep(sim$userGcMeta$gcID[1:10], 4)
+    )
+    sim$gcIndexRaster <- terra::classify(sim$gcIndexRaster, gcRcl)
+
+    sim$userGcMeta <- sim$userGcMeta[1:10,]
+    sim$userGcM3   <- subset(sim$userGcM3, gcID %in% sim$userGcMeta$gcID)
   }
 
   # Disturbances
