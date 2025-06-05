@@ -1,0 +1,105 @@
+
+if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
+
+test_that("Integration: CBM: SK-small 1998-2000", {
+
+  ## Run simInit and spades ----
+
+  # Set times
+  times <- list(start = 1998, end = 2000)
+
+  # Set project path
+  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_2-CBM_1-SK-small")
+  dir.create(projectPath)
+  withr::local_dir(projectPath)
+
+  # Set Github repo branch
+  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
+
+  # Set up project
+  simInitInput <- SpaDEStestMuffleOutput(
+
+    SpaDES.project::setupProject(
+
+      modules = c(
+        paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
+        "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
+      ),
+
+      times   = times,
+      paths   = list(
+        projectPath = projectPath,
+        modulePath  = spadesTestPaths$temp$modules,
+        packagePath = spadesTestPaths$packagePath,
+        inputPath   = spadesTestPaths$inputPath,
+        cachePath   = spadesTestPaths$cachePath,
+        outputPath  = file.path(projectPath, "outputs")
+      ),
+
+      require = c("terra", "reproducible"),
+
+      masterRaster = {
+
+        # Set study area extent and resolution
+        mrAOI <- list(
+          ext = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
+          res = 30
+        )
+
+        # Align SK master raster with study area
+        mrSource <- terra::rast(
+          reproducible::preProcess(
+            destinationPath = spadesTestPaths$inputPath,
+            url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
+            targetFile      = "ldSp_TestArea.tif"
+          )$targetFilePath)
+
+        reproducible::postProcess(
+          mrSource,
+          to = terra::rast(
+            extent     = mrAOI$ext,
+            resolution = mrAOI$res,
+            crs        = terra::crs(mrSource),
+            vals       = 1
+          ),
+          method = "near"
+        ) |> terra::classify(cbind(0, NA))
+      },
+
+      outputs = as.data.frame(expand.grid(
+        objectName = c("cbmPools", "NPP"),
+        saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))
+      ))
+    )
+  )
+
+  # Run simInit
+  simTestInit <- SpaDEStestMuffleOutput(
+    SpaDES.core::simInit2(simInitInput)
+  )
+
+  expect_s4_class(simTestInit, "simList")
+
+  # Run spades
+  simTest <- SpaDEStestMuffleOutput(
+    SpaDES.core::spades(simTestInit)
+  )
+
+  expect_s4_class(simTest, "simList")
+
+
+  ## Check outputs ----
+
+  expect_true(!is.null(simTest$spinupResult))
+
+  expect_true(!is.null(simTest$cbmPools))
+
+  expect_true(!is.null(simTest$NPP))
+
+  expect_true(!is.null(simTest$emissionsProducts))
+
+})
+
+

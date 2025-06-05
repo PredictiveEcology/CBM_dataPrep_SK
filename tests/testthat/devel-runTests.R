@@ -23,12 +23,9 @@
 
 ## RUN INDIVIDUAL TESTS ----
 
-  ## Run module with defaults
-  testthat::test_file("tests/testthat/test-1-module_1-defaults.R")
+  # Run module tests
+  testthat::test_dir("tests/testthat", filter = "module")
 
-  ## Run module with a smaller study area
-  testthat::test_file("tests/testthat/test-1-module_2-withAOI.R")
-
-  ## Run integration test
-  testthat::test_file("tests/testthat/test-2-integration_SK-small_1998-2000.R")
+  # Run integration tests
+  testthat::test_dir("tests/testthat", filter = "integration")
 

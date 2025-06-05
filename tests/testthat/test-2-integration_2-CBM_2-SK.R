@@ -1,7 +1,7 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Multi module: SK-small 1998-2000", {
+test_that("Integration: CBM: SK 1998-2000", {
 
   ## Run simInit and spades ----
 
@@ -9,7 +9,7 @@ test_that("Multi module: SK-small 1998-2000", {
   times <- list(start = 1998, end = 2000)
 
   # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_SK-small_1998-2000")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_2-CBM_2-SK")
   dir.create(projectPath)
   withr::local_dir(projectPath)
 
@@ -31,42 +31,12 @@ test_that("Multi module: SK-small 1998-2000", {
       times   = times,
       paths   = list(
         projectPath = projectPath,
-        modulePath  = spadesTestPaths$temp$modules,
+        modulePath  = spadesTestPaths$temp$module,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
         outputPath  = file.path(projectPath, "outputs")
       ),
-
-      require = c("terra", "reproducible"),
-
-      masterRaster = {
-
-        # Set study area extent and resolution
-        mrAOI <- list(
-          ext = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-          res = 30
-        )
-
-        # Align SK master raster with study area
-        mrSource <- terra::rast(
-          reproducible::preProcess(
-            destinationPath = spadesTestPaths$inputPath,
-            url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
-            targetFile      = "ldSp_TestArea.tif"
-          )$targetFilePath)
-
-        reproducible::postProcess(
-          mrSource,
-          to = terra::rast(
-            extent     = mrAOI$ext,
-            resolution = mrAOI$res,
-            crs        = terra::crs(mrSource),
-            vals       = 1
-          ),
-          method = "near"
-        ) |> terra::classify(cbind(0, NA))
-      },
 
       outputs = as.data.frame(expand.grid(
         objectName = c("cbmPools", "NPP"),
@@ -99,7 +69,6 @@ test_that("Multi module: SK-small 1998-2000", {
   expect_true(!is.null(simTest$NPP))
 
   expect_true(!is.null(simTest$emissionsProducts))
-
 })
 
 
