@@ -21,7 +21,7 @@ defineModule(sim, list(
     "reproducible (>=2.1.2)", "data.table", "terra"
   ),
   parameters = rbind(
-    defineParameter(".useCache", "logical", "TRUE", NA, NA, "Cache module events")
+    defineParameter(".useCache", "logical", TRUE, NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
     expectsInput(
@@ -43,7 +43,7 @@ defineModule(sim, list(
       desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
       sourceURL = "https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr"),
     expectsInput(
-      objectName = "gcMeta", objectClass = "data.frame",
+      objectName = "userGcMeta", objectClass = "data.frame",
       desc = "Growth curve metadata.", #TODO: Define default data source
       sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ"),
     expectsInput(
@@ -81,14 +81,14 @@ defineModule(sim, list(
       objectName = "cohortLocators", objectClass = "SpatRaster",
       desc = "Contains the default `gcIndexLocator` if not provided elsewhere by user."),
     createsOutput(
-      objectName = "gcKey", objectClass = "character",
-      desc = "Default `gcMeta` and `userGcM3` growth curve ID if not provided elsewhere by user."),
-    createsOutput(
-      objectName = "gcMeta", objectClass = "data.table",
-      desc = "Default `gcMeta` if not provided elsewhere by user."),
+      objectName = "userGcMeta", objectClass = "data.table",
+      desc = "Default `userGcMeta` if not provided elsewhere by user."),
     createsOutput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Default `userGcM3` if not provided elsewhere by user."),
+    createsOutput(
+      objectName = "curveID", objectClass = "character",
+      desc = "`gcIndexLocator`, `userGcMeta`, and `userGcM3` growth curve ID."),
     createsOutput(
       objectName = "disturbanceEvents", objectClass = "list",
       desc = "The Wulder and White disturbance raster events if they are used."),
@@ -113,6 +113,7 @@ Init <- function(sim){
 
   # Add `gcIndexLocator` to the `cohortLocators` list
   if (!is.null(sim$gcIndexLocator)){
+    sim$curveID <- "gcID"
     sim$cohortLocators <- c(sim$cohortLocators, list(gcID = sim$gcIndexLocator))
   }
 
@@ -167,7 +168,7 @@ Init <- function(sim){
 .inputObjects <- function(sim) {
 
   # Master raster
-  if (!suppliedElsewhere("masterRaster", sim) & !suppliedElsewhere("masterRasterURL", sim)){
+  if (!any(sapply(c("masterRaster", "masterRasterURL"), suppliedElsewhere, sim))){
 
     message("User has not supplied a master raster ('masterRaster' or 'masterRasterURL'). ",
             "Default for Saskatchewan will be used.")
@@ -185,7 +186,7 @@ Init <- function(sim){
   }
 
   # Stand ages
-  if (!suppliedElsewhere("ageLocator", sim) & !suppliedElsewhere("ageLocatorURL", sim)){
+  if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
 
     message("User has not supplied stand age locations ('ageLocator' or 'ageRasterURL'). ",
             "Default for Saskatchewan will be used.")
@@ -201,10 +202,9 @@ Init <- function(sim){
     sim$ageSpinupMin <- 3
   }
 
-  # Growth curves
-  if (!suppliedElsewhere("gcIndexLocator", sim) & !suppliedElsewhere("gcIndexLocatorURL", sim)){
+  # Growth curve locations
+  if (!any(sapply(c("gcIndexLocator", "gcIndexLocatorURL"), suppliedElsewhere, sim))){
 
-    # Growth curve locations
     message("User has not supplied growth curve locations ('gcIndexLocator' or 'gcIndexLocatorURL'). ",
             "Default for Saskatchewan will be used.")
 
@@ -216,13 +216,27 @@ Init <- function(sim){
     )
   }
 
+  # Growth curve metadata
+  if (!any(sapply(c("userGcMeta", "userGcMetaURL"), suppliedElsewhere, sim))){
+
+    message("User has not supplied growth curve metadata ('userGcMeta' or 'userGcMetaURL'). ",
+            "Default for Saskatchewan will be used.")
+
+    sim$userGcMeta <- prepInputs(
+      destinationPath = inputPath(sim),
+      url        = extractURL("userGcMeta"),
+      targetFile = "gcMetaEg.csv",
+      fun        = data.table::fread
+    )
+    data.table::setnames(sim$userGcMeta, "gcids", "gcID")
+    data.table::setkey(sim$userGcMeta, gcID)
+  }
+
   # Growth curve volumes
-  if (!suppliedElsewhere("userGcM3", sim) & !suppliedElsewhere("userGcM3URL", sim)){
+  if (!any(sapply(c("userGcM3", "userGcM3URL"), suppliedElsewhere, sim))){
 
     message("User has not supplied growth curve volumes ('userGcM3' or 'userGcM3URL'). ",
             "Default for Saskatchewan will be used.")
-
-    sim$gcKey <- "gcID"
 
     sim$userGcM3 <- prepInputs(
       destinationPath = inputPath(sim),
@@ -232,27 +246,11 @@ Init <- function(sim){
     )
     data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcID", "Age", "MerchVolume"))
     data.table::setkeyv(sim$userGcM3, c("gcID", "Age"))
-
-    # Growth curve metadata
-    if (!suppliedElsewhere("gcMeta", sim) & !suppliedElsewhere("gcMetaURL", sim)){
-
-      message("User has not supplied growth curve metadata ('gcMeta' or 'gcMetaURL'). ",
-              "Default for Saskatchewan will be used.")
-
-      sim$gcMeta <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("gcMeta"),
-        targetFile = "gcMetaEg.csv",
-        fun        = data.table::fread
-      )
-      data.table::setnames(sim$gcMeta, "gcids", "gcID")
-      data.table::setkey(sim$gcMeta, gcID)
-    }
   }
 
   # Disturbance metadata
   if (identical(sim$disturbanceRasters, extractURL("disturbanceRasters")) &
-      !suppliedElsewhere("disturbanceMeta", sim) & !suppliedElsewhere("disturbanceMetaURL", sim)){
+      !any(sapply(c("disturbanceMeta", "disturbanceMetaURL"), suppliedElsewhere, sim))){
 
     sim$disturbanceMeta <- prepInputs(
       destinationPath = inputPath(sim),
