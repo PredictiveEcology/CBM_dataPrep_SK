@@ -31,7 +31,7 @@ test_that("Integration: CBM: SK 1998-2000", {
       times   = times,
       paths   = list(
         projectPath = projectPath,
-        modulePath  = spadesTestPaths$temp$module,
+        modulePath  = spadesTestPaths$temp$modules,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,

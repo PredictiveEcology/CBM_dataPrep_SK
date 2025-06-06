@@ -114,18 +114,18 @@ test_that("Module runs with study AOI", {
 
   expect_true(!is.null(simTest$curveID))
   expect_true(length(simTest$curveID) >= 1)
-  expect_true("gcids" %in% simTest$curveID)
+  expect_true("gcID" %in% simTest$curveID)
   expect_true(all(simTest$curveID %in% names(simTest$cohortDT)))
 
 
-  ## Check output 'gcMeta' ----
+  ## Check output 'userGcMeta' ----
 
-  expect_true(!is.null(simTest$gcMeta))
-  expect_true(inherits(simTest$gcMeta, "data.table"))
+  expect_true(!is.null(simTest$userGcMeta))
+  expect_true(inherits(simTest$userGcMeta, "data.table"))
 
-  for (colName in c("gcids", "species_id", "sw_hw")){
-    expect_true(colName %in% names(simTest$gcMeta))
-    expect_true(all(!is.na(simTest$gcMeta[[colName]])))
+  for (colName in c("gcID", "species_id", "sw_hw")){
+    expect_true(colName %in% names(simTest$userGcMeta))
+    expect_true(all(!is.na(simTest$userGcMeta[[colName]])))
   }
 
 
@@ -134,7 +134,7 @@ test_that("Module runs with study AOI", {
   expect_true(!is.null(simTest$userGcM3))
   expect_true(inherits(simTest$userGcM3, "data.table"))
 
-  for (colName in c("gcids", "Age", "MerchVolume")){
+  for (colName in c("gcID", "Age", "MerchVolume")){
     expect_true(colName %in% names(simTest$userGcM3))
     expect_true(all(!is.na(simTest$userGcM3[[colName]])))
   }
