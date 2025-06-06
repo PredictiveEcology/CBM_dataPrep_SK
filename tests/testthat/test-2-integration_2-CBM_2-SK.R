@@ -48,7 +48,7 @@ test_that("Integration: CBM: SK 1998-2000", {
         data.frame(eventID = 4, wholeStand = 1, name = "Deforestation"),
         data.frame(eventID = 5, wholeStand = 0, name = "Generic 20% mortality")
       ),
-      disturbanceRasters = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
+      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
 
       # Set outputs
       outputs = as.data.frame(expand.grid(
