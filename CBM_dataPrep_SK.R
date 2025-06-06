@@ -140,14 +140,14 @@ defineModule(sim, list(
         pixelIndex      = "'masterRaster' cell index",
         ages            = "Cohort ages extracted from input 'ageRaster'",
         ageSpinup       = "Cohort ages raised to minimum of age 3 to use in the spinup",
-        gcID            = "Growth curve IDs extracted from input 'gcIndexRaster'",
+        curveID         = "Growth curve IDs extracted from input 'gcIndexRaster'",
         gcids           = "Growth curve ID unique to every spatial unit"
       )),
     createsOutput(
       objectName = "userGcSPU", objectClass = "data.table",
       desc = "Table of growth curves and spatial unit combinations in the cohorts.",
       columns = list(
-        gcID            = "Growth curve ID",
+        curveID         = "Growth curve ID",
         spatial_unit_id = "CBM-CFS3 spatial unit ID"
       )),
     createsOutput(
@@ -221,12 +221,12 @@ Init <- function(sim) {
   ## Create sim$standDT and sim$cohortDT ----
 
   # Set sim$curveID
-  sim$curveID <- "gcID"
+  sim$curveID <- "curveID"
 
   # Set which pixel group columns are assigned from which spatial inputs
   pgCols <- c(
     ages            = "ageRaster",
-    gcID            = "gcIndexRaster",
+    curveID         = "gcIndexRaster",
     ecozones        = "ecoLocator",
     spatial_unit_id = "spuLocator"
   )
@@ -411,8 +411,8 @@ Init <- function(sim) {
         targetFile = "gcMetaEg.csv",
         fun        = data.table::fread
       )
-      data.table::setnames(sim$userGcMeta, "gcids", "gcID")
-      data.table::setkey(sim$userGcMeta, gcID)
+      data.table::setnames(sim$userGcMeta, "gcids", "curveID")
+      data.table::setkey(sim$userGcMeta, curveID)
     }
   }
 
@@ -440,8 +440,8 @@ Init <- function(sim) {
         targetFile = "userGcM3.csv",
         fun        = data.table::fread
       )
-      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcID", "Age", "MerchVolume"))
-      data.table::setkeyv(sim$userGcM3, c("gcID", "Age"))
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("curveID", "Age", "MerchVolume"))
+      data.table::setkeyv(sim$userGcM3, c("curveID", "Age"))
     }
   }
 
