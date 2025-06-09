@@ -21,14 +21,15 @@ test_that("Integration: CBM: SK-small 1998-2000", {
 
     SpaDES.project::setupProject(
 
+      times = times,
+
       modules = c(
         paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
         "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_dataPrep@",    Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
       ),
-
-      times   = times,
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
@@ -38,36 +39,21 @@ test_that("Integration: CBM: SK-small 1998-2000", {
         outputPath  = file.path(projectPath, "outputs")
       ),
 
-      require = c("terra", "reproducible"),
+      # Set required packages for project set up
+      require = "terra",
 
-      masterRaster = {
+      # Set study area
+      masterRaster = terra::rast(
+        crs        = "EPSG:3979",
+        extent     = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
+        resolution = 30,
+        vals       = 1
+      ),
 
-        # Set study area extent and resolution
-        mrAOI <- list(
-          ext = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-          res = 30
-        )
+      # Set disturbances
+      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
 
-        # Align SK master raster with study area
-        mrSource <- terra::rast(
-          reproducible::preProcess(
-            destinationPath = spadesTestPaths$inputPath,
-            url             = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW",
-            targetFile      = "ldSp_TestArea.tif"
-          )$targetFilePath)
-
-        reproducible::postProcess(
-          mrSource,
-          to = terra::rast(
-            extent     = mrAOI$ext,
-            resolution = mrAOI$res,
-            crs        = terra::crs(mrSource),
-            vals       = 1
-          ),
-          method = "near"
-        ) |> terra::classify(cbind(0, NA))
-      },
-
+      # Set outputs
       outputs = as.data.frame(expand.grid(
         objectName = c("cbmPools", "NPP"),
         saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))

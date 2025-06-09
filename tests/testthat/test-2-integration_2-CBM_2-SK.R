@@ -21,14 +21,15 @@ test_that("Integration: CBM: SK 1998-2000", {
 
     SpaDES.project::setupProject(
 
+      times = times,
+
       modules = c(
         paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
         "CBM_dataPrep_SK",
+        paste0("PredictiveEcology/CBM_dataPrep@",    Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
       ),
-
-      times   = times,
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,
@@ -38,6 +39,10 @@ test_that("Integration: CBM: SK 1998-2000", {
         outputPath  = file.path(projectPath, "outputs")
       ),
 
+      # Set disturbances
+      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
+
+      # Set outputs
       outputs = as.data.frame(expand.grid(
         objectName = c("cbmPools", "NPP"),
         saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))
@@ -69,6 +74,7 @@ test_that("Integration: CBM: SK 1998-2000", {
   expect_true(!is.null(simTest$NPP))
 
   expect_true(!is.null(simTest$emissionsProducts))
+
 })
 
 
