@@ -51,7 +51,6 @@ test_that("Integration: CBM_dataPrep and disturbances", {
       disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
     )
   )
-  simInitInput$loadOrder <- simInitInput$modules
 
   # Run simInit
   simTestInit <- SpaDEStestMuffleOutput(
