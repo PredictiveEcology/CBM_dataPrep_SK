@@ -60,7 +60,7 @@ defineModule(sim, list(
         "the disturbances will be processed into a list of `disturbanceRasters` for CBM_dataPrep")),
     expectsInput(
       objectName = "disturbanceMeta", objectClass = "data.table",
-      sourceURL = "https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ",
+      sourceURL = "https://drive.google.com/file/d/12z25mHl7McRm1ee7V7dgtSHdLP8-QEZp",
       desc = paste(
         "If the Wulder and White disturbance rasters are used,",
         "the metadata table describing their events is provided."))
