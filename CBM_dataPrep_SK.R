@@ -204,7 +204,7 @@ Init <- function(sim){
       targetFile = "gcMetaEg.csv",
       fun        = data.table::fread
     )
-    data.table::setnames(sim$userGcMeta, "gcids", "curveID")
+    data.table::setnames(sim$userGcMeta, names(sim$userGcMeta)[[1]], "curveID")
     data.table::setkey(sim$userGcMeta, curveID)
   }
 
