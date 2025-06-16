@@ -24,11 +24,11 @@ test_that("Integration: CBM: SK 1998-2000", {
       times = times,
 
       modules = c(
-        paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_defaults@",       Sys.getenv("BRANCH_NAME")),
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@",    Sys.getenv("BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@",       Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_vol2biomass_SK@", Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_core@",           Sys.getenv("BRANCH_NAME"))
       ),
       paths   = list(
         projectPath = projectPath,
