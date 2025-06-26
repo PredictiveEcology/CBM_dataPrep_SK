@@ -1,12 +1,12 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Module runs with defaults", {
+test_that("Module runs with disturbances", {
 
   ## Run simInit and spades ----
 
   # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "1-module_1-defaults")
+  projectPath <- file.path(spadesTestPaths$temp$projects, "1-module_2-disturbances")
   dir.create(projectPath)
   withr::local_dir(projectPath)
 
@@ -14,6 +14,9 @@ test_that("Module runs with defaults", {
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
+
+      times = list(start = 1998, end = 2000),
+
       modules = "CBM_dataPrep_SK",
       paths   = list(
         projectPath = projectPath,
@@ -22,7 +25,9 @@ test_that("Module runs with defaults", {
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
         outputPath  = file.path(projectPath, "outputs")
-      )
+      ),
+
+      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
     )
   )
 
@@ -74,10 +79,16 @@ test_that("Module runs with defaults", {
   expect_true("curveID" %in% names(simTest$userGcM3))
 
   # disturbanceRasters
-  expect_true(is.null(simTest$disturbanceRasters))
+  expect_true(inherits(simTest$disturbanceRasters, "list"))
+  expect_setequal(names(simTest$disturbanceRasters), as.character(1:5))
+  for (i in 1:5){
+    expect_equal(names(simTest$disturbanceRasters[[i]]), as.character(1985:2011))
+  }
 
   # disturbanceMeta
-  expect_true(is.null(simTest$disturbanceMeta))
+  expect_true(!is.null(simTest$disturbanceMeta))
+  expect_true(inherits(simTest$disturbanceMeta, "data.table"))
+  expect_equal(nrow(simTest$disturbanceMeta), 5)
 
 })
 
