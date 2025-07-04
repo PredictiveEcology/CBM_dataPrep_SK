@@ -28,7 +28,7 @@ defineModule(sim, list(
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster template defining the study area. Default is a test area in the managed forests of SK.",
-      sourceURL = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW"),
+      sourceURL = "https://drive.google.com/file/d/1FmtbEKbkzufIifETONxOkoplGX50lrT_"),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
@@ -42,7 +42,7 @@ defineModule(sim, list(
     expectsInput(
       objectName = "gcIndexLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr"),
+      sourceURL = "https://drive.google.com/file/d/1TJHdzS85BLRMEvT1I2SjYsur-FZM4hmn/"),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
