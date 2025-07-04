@@ -53,7 +53,7 @@ defineModule(sim, list(
       sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
-      sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
+      sourceURL = "https://drive.google.com/file/d/1tsz57amfHjoLafGxjKYSWQPLD7HksdCa",
       desc = paste(
         "The sourceURL is the Wulder and White disturbance rasters for SK covering 1984-2011.",
         "If this URL is provided by the user,",
