@@ -32,7 +32,7 @@ defineModule(sim, list(
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
-      sourceURL = "https://drive.google.com/file/d/1hylk0D1vO19Dpg4zFtnSNhnyYP4j-bEA"),
+      sourceURL = "https://drive.google.com/file/d/1BV7_LI0hEc8g5AhKe5pfycrdWnVh_G4a"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
       desc = "Year that the ages in `ageLocator` represent."),
