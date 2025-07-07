@@ -46,7 +46,7 @@ defineModule(sim, list(
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ"),
+      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Growth curve volumes.", #TODO: Define default data source
@@ -60,7 +60,7 @@ defineModule(sim, list(
         "the disturbances will be processed into a list of `disturbanceRasters` for CBM_dataPrep")),
     expectsInput(
       objectName = "disturbanceMeta", objectClass = "data.table",
-      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9",
+      sourceURL = "https://drive.google.com/file/d/12z25mHl7McRm1ee7V7dgtSHdLP8-QEZp",
       desc = paste(
         "If the Wulder and White disturbance rasters are used,",
         "the metadata table describing their events is provided."))
