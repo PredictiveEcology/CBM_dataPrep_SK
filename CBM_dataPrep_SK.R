@@ -119,17 +119,17 @@ Init <- function(sim){
     archiveDir <- prepInputs(
       destinationPath = inputPath(sim),
       url         = extractURL("disturbanceRastersURL"),
-      archive     = "disturbance_testArea.zip",
-      targetFile  = "disturbance_testArea",
+      archive     = "disturbance.zip",
+      targetFile  = "disturbance",
       alsoExtract = do.call(c, lapply(1985:2011, function(simYear){
-        paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
+        paste0("disturbance/dist", simYear, c(".tif"))
       })),
       fun = NA)
 
     # Prepare files by year
-    grdFiles <- list.files(archiveDir, pattern = "\\.grd$", recursive = TRUE, full.names = TRUE)
-    grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
-    names(grdFiles) <- grdYears
+    grdFiles <- list.files(archiveDir, pattern = "\\.tif$", recursive = TRUE, full.names = TRUE)
+    # grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
+    # names(grdFiles) <- grdYears
 
     # Set disturbanceRasters list
     sim$disturbanceRasters <- c(
@@ -170,7 +170,7 @@ Init <- function(sim){
     sim$ageLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("ageLocator"),
-      targetFile = "age_TestArea.tif",
+      targetFile = "age1CASFRI.tif",
       fun        = terra::rast
     )
 
