@@ -28,11 +28,11 @@ defineModule(sim, list(
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster template defining the study area. Default is a test area in the managed forests of SK.",
-      sourceURL = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW"),
+      sourceURL = "https://drive.google.com/file/d/1FmtbEKbkzufIifETONxOkoplGX50lrT_"),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
-      sourceURL = "https://drive.google.com/file/d/1hylk0D1vO19Dpg4zFtnSNhnyYP4j-bEA"),
+      sourceURL = "https://drive.google.com/file/d/1BV7_LI0hEc8g5AhKe5pfycrdWnVh_G4a"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
       desc = "Year that the ages in `ageLocator` represent."),
@@ -42,18 +42,18 @@ defineModule(sim, list(
     expectsInput(
       objectName = "gcIndexLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr"),
+      sourceURL = "https://drive.google.com/file/d/1TJHdzS85BLRMEvT1I2SjYsur-FZM4hmn/"),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ"),
+      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Growth curve volumes.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
+      sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
-      sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
+      sourceURL = "https://drive.google.com/file/d/1tsz57amfHjoLafGxjKYSWQPLD7HksdCa",
       desc = paste(
         "The sourceURL is the Wulder and White disturbance rasters for SK covering 1984-2011.",
         "If this URL is provided by the user,",
@@ -125,17 +125,17 @@ Init <- function(sim){
     archiveDir <- prepInputs(
       destinationPath = inputPath(sim),
       url         = extractURL("disturbanceRastersURL"),
-      archive     = "disturbance_testArea.zip",
-      targetFile  = "disturbance_testArea",
+      archive     = "disturbance.zip",
+      targetFile  = "disturbance",
       alsoExtract = do.call(c, lapply(1985:2011, function(simYear){
-        paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
+        paste0("disturbance/dist", simYear, c(".tif"))
       })),
       fun = NA)
 
     # Prepare files by year
-    grdFiles <- list.files(archiveDir, pattern = "\\.grd$", recursive = TRUE, full.names = TRUE)
-    grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
-    names(grdFiles) <- grdYears
+    grdFiles <- list.files(archiveDir, pattern = "\\.tif$", recursive = TRUE, full.names = TRUE)
+    # grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
+    # names(grdFiles) <- grdYears
 
     # Set disturbanceRasters list
     sim$disturbanceRasters <- c(
@@ -176,7 +176,7 @@ Init <- function(sim){
     sim$ageLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("ageLocator"),
-      targetFile = "age_TestArea.tif",
+      targetFile = "age1CASFRI.tif",
       fun        = terra::rast
     )
 
