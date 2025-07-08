@@ -70,6 +70,9 @@ defineModule(sim, list(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Default `masterRaster` if not provided elsewhere by user."),
     createsOutput(
+      objectName = "adminLocator", objectClass = "character",
+      desc = "Administrative boundary name set to 'Saskatchewan'"),
+    createsOutput(
       objectName = "ageLocator", objectClass = "SpatRaster",
       desc = "Default `ageLocator` if not provided elsewhere by user."),
     createsOutput(
@@ -111,6 +114,9 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim){
+
+  # Set admin boundary name
+  sim$adminLocator <- "Saskatchewan"
 
   # Read Wulder and White disturbances rasters
   if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL"))){
