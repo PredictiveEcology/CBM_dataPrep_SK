@@ -47,6 +47,10 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$masterRaster))
   expect_true(inherits(simTest$masterRaster, "SpatRaster"))
 
+  # adminLocator
+  expect_true(!is.null(simTest$adminLocator))
+  expect_equal(simTest$adminLocator, "Saskatchewan")
+
   # ageLocator
   expect_true(!is.null(simTest$ageLocator))
   expect_true(inherits(simTest$ageLocator, "SpatRaster"))
