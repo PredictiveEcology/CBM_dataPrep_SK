@@ -158,7 +158,7 @@ Init <- function(sim){
     sim$masterRaster <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("masterRaster"),
-      targetFile = "ldSp_TestArea.tif",
+      targetFile = "casfri_dom2.tif",
       fun        = terra::rast
     )
 
