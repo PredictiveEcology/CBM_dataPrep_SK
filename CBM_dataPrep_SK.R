@@ -53,7 +53,7 @@ defineModule(sim, list(
       sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
-      sourceURL = "https://drive.google.com/file/d/1tsz57amfHjoLafGxjKYSWQPLD7HksdCa",
+      sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
       desc = paste(
         "The sourceURL is the Wulder and White disturbance rasters for SK covering 1984-2011.",
         "If this URL is provided by the user,",
@@ -125,17 +125,17 @@ Init <- function(sim){
     archiveDir <- prepInputs(
       destinationPath = inputPath(sim),
       url         = extractURL("disturbanceRastersURL"),
-      archive     = "disturbance.zip",
-      targetFile  = "disturbance",
+      archive     = "disturbance_testArea.zip",
+      targetFile  = "disturbance_testArea",
       alsoExtract = do.call(c, lapply(1985:2011, function(simYear){
-        paste0("disturbance/dist", simYear, c(".tif"))
+        paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
       })),
       fun = NA)
 
     # Prepare files by year
-    grdFiles <- list.files(archiveDir, pattern = "\\.tif$", recursive = TRUE, full.names = TRUE)
-    # grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
-    # names(grdFiles) <- grdYears
+    grdFiles <- list.files(archiveDir, pattern = "\\.grd$", recursive = TRUE, full.names = TRUE)
+    grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
+    names(grdFiles) <- grdYears
 
     # Set disturbanceRasters list
     sim$disturbanceRasters <- c(
