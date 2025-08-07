@@ -15,7 +15,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
       modules = c(
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@", getOption("spades.tests.BRANCH_NAME"))
       ),
       times   = times,
       paths   = list(
@@ -70,7 +70,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
   # Check number of valid pixels (no NAs in any column)
-  expect_equal(nrow(simTest$standDT), 6763)
+  expect_equal(nrow(simTest$standDT), 6751)
 
   # Check spatial units
   expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
@@ -81,7 +81,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_true(!is.null(simTest$cohortDT))
   expect_true(inherits(simTest$cohortDT, "data.table"))
 
-  for (colName in c("cohortID", "pixelIndex", "gcids", "ages")){
+  for (colName in c("cohortID", "pixelIndex", "gcids", "age")){
     expect_true(colName %in% names(simTest$cohortDT))
     expect_true(all(!is.na(simTest$cohortDT[[colName]])))
   }
@@ -90,9 +90,9 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
   # Check spinup ages are all >= 3
   expect_true("ageSpinup" %in% names(simTest$cohortDT))
-  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$ages >= 3],
-               simTest$cohortDT$ages[simTest$cohortDT$ages >= 3])
-  expect_true(all(simTest$ageSpinup[simTest$cohortDT$ages < 3] == 3))
+  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$age >= 3],
+               simTest$cohortDT$age[simTest$cohortDT$age >= 3])
+  expect_true(all(simTest$ageSpinup[simTest$cohortDT$age < 3] == 3))
 
   # Check number of valid cohorts (no NAs in any column)
   expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))

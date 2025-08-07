@@ -17,11 +17,11 @@ test_that("Integration: CBM: SK test area (SPU 27 & 28) 2012", {
     SpaDES.project::setupProject(
 
       modules = c(
-        paste0("PredictiveEcology/CBM_defaults@",       Sys.getenv("BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_defaults@",       getOption("spades.tests.BRANCH_NAME")),
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@",       Sys.getenv("BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_vol2biomass_SK@", Sys.getenv("BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_core@",           Sys.getenv("BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@",       getOption("spades.tests.BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_vol2biomass_SK@", getOption("spades.tests.BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_core@",           getOption("spades.tests.BRANCH_NAME"))
       ),
       times   = times,
       paths   = list(
