@@ -24,5 +24,5 @@ withr::with_options(c(timeout = 600), Require::Install(
 ))
 
 # Set Github repo branch
-if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
+options("spades.tests.BRANCH_NAME" = ifelse(nzchar(Sys.getenv("BRANCH_NAME")), Sys.getenv("BRANCH_NAME"), "development"))
 
