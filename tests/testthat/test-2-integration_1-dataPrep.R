@@ -1,7 +1,7 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM_dataPrep: SK test area (SPU 27) 2012", {
+test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
   ## Run simInit and spades ----
 
@@ -73,7 +73,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 27) 2012", {
   expect_equal(nrow(simTest$standDT), 6763)
 
   # Check spatial units
-  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 27)
+  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
 
 
   ## Check output 'cohortDT' ----
