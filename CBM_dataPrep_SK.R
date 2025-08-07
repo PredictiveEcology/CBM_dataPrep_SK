@@ -28,11 +28,11 @@ defineModule(sim, list(
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster template defining the study area. Default is a test area in the managed forests of SK.",
-      sourceURL = "https://drive.google.com/file/d/1FmtbEKbkzufIifETONxOkoplGX50lrT_"),
+      sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
-      sourceURL = "https://drive.google.com/file/d/1BV7_LI0hEc8g5AhKe5pfycrdWnVh_G4a"),
+      sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
       desc = "Year that the ages in `ageLocator` represent."),
@@ -42,7 +42,7 @@ defineModule(sim, list(
     expectsInput(
       objectName = "gcIndexLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1TJHdzS85BLRMEvT1I2SjYsur-FZM4hmn/"),
+      sourceURL = "https://drive.google.com/file/d/1RWzETOXk0IbIUkSFvbPm46MGaFHgcjEr"),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
@@ -158,12 +158,8 @@ Init <- function(sim){
     sim$masterRaster <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("masterRaster"),
-      targetFile = "casfri_dom2.tif",
+      targetFile = "casfri_dom2-Byte.tif",
       fun        = terra::rast
-    )
-
-    sim$masterRaster <- terra::classify(
-      sim$masterRaster, cbind(0, NA)
     )
   }
 
@@ -176,7 +172,7 @@ Init <- function(sim){
     sim$ageLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("ageLocator"),
-      targetFile = "age1CASFRI.tif",
+      targetFile = "age1CASFRI-Byte.tif",
       fun        = terra::rast
     )
 
@@ -193,7 +189,7 @@ Init <- function(sim){
     sim$gcIndexLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("gcIndexLocator"),
-      targetFile = "gcIndex.tif",
+      targetFile = "gcIndex-Byte.tif",
       fun        = terra::rast
     )
   }
