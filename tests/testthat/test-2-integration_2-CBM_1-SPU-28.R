@@ -1,12 +1,12 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM: SK test area (SPU 27) 2012", {
+test_that("Integration: CBM: SK test area (SPU 28) 2012", {
 
   ## Run simInit and spades ----
 
   # Set up project
-  projectName <- "2-intg_2-CBM_1-SPU-27"
+  projectName <- "2-intg_2-CBM_1-SPU-28"
   times       <- list(start = 2012, end = 2012)
 
   simInitInput <- SpaDEStestMuffleOutput(
