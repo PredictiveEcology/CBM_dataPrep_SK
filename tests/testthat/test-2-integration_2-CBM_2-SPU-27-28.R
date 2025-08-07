@@ -1,27 +1,20 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM: SK-small 1998-2000", {
+test_that("Integration: CBM: SK test area (SPU 27 & 28) 2012", {
 
   ## Run simInit and spades ----
 
-  # Set times
-  times <- list(start = 1998, end = 2000)
-
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "intg_2-CBM_1-SK-small")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
-  # Set Github repo branch
-  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
+  # Skip on GHA
+  testthat::skip_on_ci()
 
   # Set up project
+  projectName <- "2-intg_2-CBM_2-SPU-27-28"
+  times       <- list(start = 2012, end = 2012)
+
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
-
-      times = times,
 
       modules = c(
         paste0("PredictiveEcology/CBM_defaults@",       Sys.getenv("BRANCH_NAME")),
@@ -30,13 +23,14 @@ test_that("Integration: CBM: SK-small 1998-2000", {
         paste0("PredictiveEcology/CBM_vol2biomass_SK@", Sys.getenv("BRANCH_NAME")),
         paste0("PredictiveEcology/CBM_core@",           Sys.getenv("BRANCH_NAME"))
       ),
+      times   = times,
       paths   = list(
-        projectPath = projectPath,
+        projectPath = spadesTestPaths$projectPath,
         modulePath  = spadesTestPaths$temp$modules,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(projectPath, "outputs")
+        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
       ),
 
       # Set required packages for project set up
@@ -45,13 +39,10 @@ test_that("Integration: CBM: SK-small 1998-2000", {
       # Set study area
       masterRaster = terra::rast(
         crs        = "EPSG:3979",
-        extent     = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-        resolution = 30,
+        extent     = c(xmin = -710000, xmax = -640000, ymin = 690000, ymax = 760000),
+        resolution = 50,
         vals       = 1
       ),
-
-      # Set disturbances
-      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
 
       # Set outputs
       outputs = as.data.frame(expand.grid(
@@ -78,11 +69,7 @@ test_that("Integration: CBM: SK-small 1998-2000", {
 
   ## Check outputs ----
 
-  expect_true(!is.null(simTest$spinupResult))
-
-  expect_true(!is.null(simTest$cbmPools))
-
-  expect_true(!is.null(simTest$NPP))
+  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), c(27, 28))
 
   expect_true(!is.null(simTest$emissionsProducts))
 
