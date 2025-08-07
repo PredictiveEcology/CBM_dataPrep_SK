@@ -1,39 +1,30 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM_dataPrep and disturbances", {
+test_that("Integration: CBM_dataPrep: SK test area (SPU 27) 2012", {
 
   ## Run simInit and spades ----
 
-  # Set times
-  times <- list(start = 1998, end = 2000)
-
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "2-intg_1-dataPrep")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
-  # Set Github repo branch
-  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
-
   # Set up project
+  projectName <- "2-intg_1-dataPrep"
+  times       <- list(start = 1998, end = 2000)
+
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
-
-      times = times,
 
       modules = c(
         "CBM_dataPrep_SK",
         paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME"))
       ),
+      times   = times,
       paths   = list(
-        projectPath = projectPath,
+        projectPath = spadesTestPaths$projectPath,
         modulePath  = spadesTestPaths$temp$modules,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(projectPath, "outputs")
+        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
       ),
 
       # Set required packages for project set up
@@ -80,6 +71,9 @@ test_that("Integration: CBM_dataPrep and disturbances", {
 
   # Check number of valid pixels (no NAs in any column)
   expect_equal(nrow(simTest$standDT), 6763)
+
+  # Check spatial units
+  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 27)
 
 
   ## Check output 'cohortDT' ----
