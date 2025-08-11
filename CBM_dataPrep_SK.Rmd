@@ -34,18 +34,14 @@ Our example study area is defined by the object [`masterRaster`](https://predict
 
 | Name | Class | Description | Source |
 |-----------------|-----------------|---------------------|-----------------|
-| dbPath | Character | Path to the CBM defaults SQL database | CBM_defaults |
-| disturbanceMatrix | Data table | Default disturbance data | CBM_defaults |
-| CBMspecies | Data table | Default species data | CBM_defaults |
-| gcMeta | Data table | Growth curve metadata | [Google Drive](https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing) |
-| userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
 | masterRaster | SpatRaster | Raster of study area | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW) |
-| ageRaster | SpatRaster | Raster ages for each pixel | [Google Drive](https://drive.google.com/file/d/1hylk0D1vO19Dpg4zFtnSNhnyYP4j-bEA) |
-| gcIndexRaster | SpatRaster | Raster giving the growth curve value for each pixel | [Google Drive](https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr) |
-| spuLocator | SpatRaster | Canada's spatial units as polygon features with spatial unit IDs | CBM_defaults |
-| ecoLocator | SpatRaster | Canada's ecozone as polygon features with ecozone IDs | CBM_defaults |
-| disturbanceRasters | Character | Disturbance rasters for the study area for the duration of simulation | User provided, for SK: [Google Drive](https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt) |
-| userDist | Data table | User provided disturbance table defining distubances and values in `disturbanceRasters` | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ) |
+| ageLocator | SpatRaster | Spatial data source of stand age | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) | 
+| ageDataYear | Numeric | Year that the ages in ageLocator represent | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) |
+| ageSpinupMin | Numeric | Minimum age for cohorts during spinup | Default is set to 3 |
+| gcIndexLocator | SpatRaster | Raster giving the growth curve value for each pixel | [Google Drive](https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr) |
+| userGcMeta | Data table | Growth curve metadata | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9) |
+| userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
+| disturbanceMeta | Data table |  Table defining the disturbance event types | [Google Drive](https://drive.google.com/file/d/12z25mHl7McRm1ee7V7dgtSHdLP8-QEZp) |
 
 ## Module functioning
 
@@ -80,17 +76,11 @@ Because growth curves can be identified by strata, multiple columns can be used 
 
 | Name | Class | Description |
 |------|-------|-------------|
-| allPixDT | Data table | Summary table of raster input data with 1 row for each `masterRaster` pixel |
-| standDT | Data table | Table of stand attributes. Stands can have 1 or more cohorts |
-| cohortDT | Data table | TAble of cohort attributes |
-| spatialDT    | Data table  | Summary table of raster input data with 1 row for each `masterRaster pixel` that is not `NA` | 
-| curveID | Character | Column names in `cohortDT` that uniquely define each cohort growth curve ID |
-| gcMeta | Data table | Growth curve metadata |
-| userGcM3 | Data table | User provided growth curve data |
-| disturbanceMeta | Data table | Table defining disturbance event types |
-| disturbanceEvents | Data table | Table with disturbance events for each simulation year |
-| speciesPixelGroup | Data table | Table connecting pixel groups to species IDs |
-
+| masterRaster | SpatRaster | Raster of study area |
+| adminLocator | Character | Spatial data source of Canada's administrative boundary names |
+| curveID | Character |
+| disturbanceRasters | list | Disturbance rasters for each simulation year |
+| disturbanceMeta | Data table | Disturbance rasters metadata |
 
 ## Links to other modules
 
