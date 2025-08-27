@@ -21,7 +21,7 @@ test_that("Module: with example disturbances", {
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       ),
 
       disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"

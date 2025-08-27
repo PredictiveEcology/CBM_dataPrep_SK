@@ -15,7 +15,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
       modules = c(
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@", getOption("spades.tests.BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME", "development"))
       ),
       times   = times,
       paths   = list(
@@ -24,7 +24,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       ),
 
       # Set required packages for project set up

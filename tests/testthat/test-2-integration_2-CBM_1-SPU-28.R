@@ -14,11 +14,11 @@ test_that("Integration: CBM: SK test area (SPU 28) 2012", {
     SpaDES.project::setupProject(
 
       modules = c(
-        paste0("PredictiveEcology/CBM_defaults@",       getOption("spades.tests.BRANCH_NAME")),
+        paste0("PredictiveEcology/CBM_defaults@",       Sys.getenv("BRANCH_NAME", "development")),
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@",       getOption("spades.tests.BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_vol2biomass_SK@", getOption("spades.tests.BRANCH_NAME")),
-        paste0("PredictiveEcology/CBM_core@",           getOption("spades.tests.BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@",       Sys.getenv("BRANCH_NAME", "development")),
+        paste0("PredictiveEcology/CBM_vol2biomass_SK@", Sys.getenv("BRANCH_NAME", "development")),
+        paste0("PredictiveEcology/CBM_core@",           Sys.getenv("BRANCH_NAME", "development"))
       ),
       times   = times,
       paths   = list(
@@ -27,7 +27,7 @@ test_that("Integration: CBM: SK test area (SPU 28) 2012", {
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       ),
 
       # Set required packages for project set up

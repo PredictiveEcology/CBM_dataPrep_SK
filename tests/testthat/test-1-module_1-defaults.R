@@ -21,7 +21,7 @@ test_that("Module: defaults", {
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$outputPath, projectName)
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       )
     )
   )

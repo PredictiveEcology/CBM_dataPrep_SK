@@ -23,6 +23,3 @@ withr::with_options(c(timeout = 600), Require::Install(
   repos = unique(c("predictiveecology.r-universe.dev", getOption("repos")))
 ))
 
-# Set Github repo branch
-options("spades.tests.BRANCH_NAME" = ifelse(nzchar(Sys.getenv("BRANCH_NAME")), Sys.getenv("BRANCH_NAME"), "development"))
-
