@@ -42,13 +42,7 @@ test_that("Integration: CBM: SK test area (SPU 27 & 28) 2012", {
         extent     = c(xmin = -710000, xmax = -640000, ymin = 690000, ymax = 760000),
         resolution = 50,
         vals       = 1
-      ),
-
-      # Set outputs
-      outputs = as.data.frame(expand.grid(
-        objectName = c("cbmPools", "NPP"),
-        saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))
-      ))
+      )
     )
   )
 
