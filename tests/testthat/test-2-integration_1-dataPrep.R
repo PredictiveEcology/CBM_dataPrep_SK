@@ -33,9 +33,12 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
       # Set study area
       masterRaster = terra::rast(
         crs  = "EPSG:3979",
-        ext  = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
         res  = 30,
-        vals = 1L
+        vals = 1L,
+        xmin = -687696,
+        xmax = -681036,
+        ymin =  711955,
+        ymax =  716183
       ),
 
       # Set disturbances

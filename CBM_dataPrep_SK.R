@@ -156,12 +156,12 @@ Init <- function(sim){
 
     sim$masterRaster <- terra::rast(
       crs  = "EPSG:3979",
-      ext  = c(
-        xmin = -1077673.4762, ymin = 108487.9315,
-        xmax =  -426673.4762, ymax = 971077.9315
-      ),
       res  = 30,
-      vals = 1L
+      vals = 1L,
+      xmin = -1077673.4762,
+      xmax =  -426673.4762,
+      ymin =   108487.9315,
+      ymax =   971077.9315
     )
   }
 
