@@ -38,10 +38,13 @@ test_that("Integration: CBM: SK test area (SPU 27 & 28) 2012", {
 
       # Set study area
       masterRaster = terra::rast(
-        crs        = "EPSG:3979",
-        extent     = c(xmin = -710000, xmax = -640000, ymin = 690000, ymax = 760000),
-        resolution = 50,
-        vals       = 1
+        crs  = "EPSG:3979",
+        res  = 50,
+        vals = 1L,
+        xmin = -710000,
+        xmax = -640000,
+        ymin =  690000,
+        ymax =  760000
       )
     )
   )

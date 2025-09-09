@@ -27,8 +27,7 @@ defineModule(sim, list(
   inputObjects = bindrows(
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
-      desc = "Raster template defining the study area. Default is a test area in the managed forests of SK.",
-      sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
+      desc = "Raster template defining the study area. Default is a test area in the managed forests of SK."),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
@@ -155,11 +154,14 @@ Init <- function(sim){
     message("User has not supplied a master raster ('masterRaster' or 'masterRasterURL'). ",
             "Default for Saskatchewan will be used.")
 
-    sim$masterRaster <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("masterRaster"),
-      targetFile = "casfri_dom2-Byte.tif",
-      fun        = terra::rast
+    sim$masterRaster <- terra::rast(
+      crs  = "EPSG:3979",
+      res  = 30,
+      vals = 1L,
+      xmin = -1077673.4762,
+      xmax =  -426673.4762,
+      ymin =   108487.9315,
+      ymax =   971077.9315
     )
   }
 
