@@ -114,9 +114,6 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim){
 
-  # Set admin boundary name
-  sim$adminLocator <- "Saskatchewan"
-
   # Read Wulder and White disturbances rasters
   if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL"))){
 
@@ -164,6 +161,9 @@ Init <- function(sim){
       ymax =   971077.9315
     )
   }
+
+  # Admin boundary name
+  if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
 
   # Stand ages
   if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
