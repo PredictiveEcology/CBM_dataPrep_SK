@@ -29,6 +29,10 @@ defineModule(sim, list(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Raster template defining the study area. Default is a test area in the managed forests of SK."),
     expectsInput(
+      objectName  = "adminLocator",
+      objectClass = "sourceID|sf|SpatRaster|character",
+      desc = "Canada administrative boundary name(s). Defaults to 'Saskatchewan'."),
+    expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
       sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
@@ -70,7 +74,7 @@ defineModule(sim, list(
       desc = "Default `masterRaster` if not provided elsewhere by user."),
     createsOutput(
       objectName = "adminLocator", objectClass = "character",
-      desc = "Administrative boundary name set to 'Saskatchewan'"),
+      desc = "Default `adminLocator` if not provided elsewhere by user."),
     createsOutput(
       objectName = "ageLocator", objectClass = "SpatRaster",
       desc = "Default `ageLocator` if not provided elsewhere by user."),
