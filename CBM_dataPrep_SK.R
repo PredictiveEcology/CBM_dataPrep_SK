@@ -34,7 +34,7 @@ defineModule(sim, list(
       desc = "Canada administrative boundary name(s). Defaults to 'Saskatchewan'."),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
-      desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
+      desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory backtracked to 1985.",
       sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
@@ -181,8 +181,7 @@ Init <- function(sim){
       targetFile = "age1CASFRI-Byte.tif",
       fun        = terra::rast
     )
-
-    sim$ageDataYear <- 2012
+    sim$ageDataYear  <- 1985
     sim$ageSpinupMin <- 3
   }
 
