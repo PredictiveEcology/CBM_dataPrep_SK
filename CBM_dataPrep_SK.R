@@ -149,6 +149,9 @@ Init <- function(sim){
 
 .inputObjects <- function(sim) {
 
+  # Admin boundary name
+  if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
+
   # Master raster
   if (!any(sapply(c("masterRaster", "masterRasterURL"), suppliedElsewhere, sim))){
 
@@ -165,9 +168,6 @@ Init <- function(sim){
       ymax =   971077.9315
     )
   }
-
-  # Admin boundary name
-  if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
 
   # Cohort ages
   if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
