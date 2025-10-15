@@ -73,7 +73,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
   # Check number of valid pixels (no NAs in any column)
-  expect_equal(nrow(simTest$standDT), 6751)
+  expect_equal(nrow(simTest$standDT), 6753)
 
   # Check spatial units
   expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
@@ -101,6 +101,12 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))
 
 
+  ## Check output 'curveID' ----
+
+  expect_true(!is.null(simTest$curveID))
+  expect_equal(simTest$curveID, c("species", "prodClass"))
+
+
   ## Check output 'userGcMeta' ----
 
   expect_true(!is.null(simTest$userGcMeta))
@@ -117,7 +123,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_true(!is.null(simTest$userGcM3))
   expect_true(inherits(simTest$userGcM3, "data.table"))
 
-  for (colName in c(simTest$curveID, "Age", "MerchVolume")){
+  for (colName in c("curveID", "Age", "MerchVolume")){
     expect_true(colName %in% names(simTest$userGcM3))
     expect_true(all(!is.na(simTest$userGcM3[[colName]])))
   }
