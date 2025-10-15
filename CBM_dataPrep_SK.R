@@ -34,7 +34,7 @@ defineModule(sim, list(
       desc = "Canada administrative boundary name(s). Defaults to 'Saskatchewan'."),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
-      desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory backtracked to 1985.",
+      desc = "Spatial data source of cohort ages. Default is the 2012 CASFRI inventory backtracked to 1985.",
       sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
@@ -169,10 +169,10 @@ Init <- function(sim){
   # Admin boundary name
   if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
 
-  # Stand ages
+  # Cohort ages
   if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
 
-    message("User has not supplied stand age locations ('ageLocator' or 'ageRasterURL'). ",
+    message("User has not supplied cohort age locations ('ageLocator' or 'ageRasterURL'). ",
             "Default for Saskatchewan will be used.")
 
     sim$ageLocator <- prepInputs(
