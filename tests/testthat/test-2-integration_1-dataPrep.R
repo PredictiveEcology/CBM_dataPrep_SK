@@ -1,39 +1,30 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM_dataPrep and disturbances", {
+test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
   ## Run simInit and spades ----
 
-  # Set times
-  times <- list(start = 1998, end = 2000)
-
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "2-intg_1-dataPrep")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
-  # Set Github repo branch
-  if (!nzchar(Sys.getenv("BRANCH_NAME"))) withr::local_envvar(BRANCH_NAME = "development")
-
   # Set up project
+  projectName <- "2-intg_1-dataPrep"
+  times       <- list(start = 1998, end = 2000)
+
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
-      times = times,
-
       modules = c(
         "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME"))
+        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME", "development"))
       ),
+      times   = times,
       paths   = list(
-        projectPath = projectPath,
+        projectPath = spadesTestPaths$projectPath,
         modulePath  = spadesTestPaths$temp$modules,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(projectPath, "outputs")
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       ),
 
       # Set required packages for project set up
@@ -41,10 +32,13 @@ test_that("Integration: CBM_dataPrep and disturbances", {
 
       # Set study area
       masterRaster = terra::rast(
-        extent     = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-        resolution = 30,
-        crs        = "EPSG:3979",
-        vals       = 1
+        crs  = "EPSG:3979",
+        res  = 30,
+        vals = 1L,
+        xmin = -687696,
+        xmax = -681036,
+        ymin =  711955,
+        ymax =  716183
       ),
 
       # Set disturbances
@@ -79,7 +73,10 @@ test_that("Integration: CBM_dataPrep and disturbances", {
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
   # Check number of valid pixels (no NAs in any column)
-  expect_equal(nrow(simTest$standDT), 6763)
+  expect_equal(nrow(simTest$standDT), 6751)
+
+  # Check spatial units
+  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
 
 
   ## Check output 'cohortDT' ----
@@ -87,7 +84,7 @@ test_that("Integration: CBM_dataPrep and disturbances", {
   expect_true(!is.null(simTest$cohortDT))
   expect_true(inherits(simTest$cohortDT, "data.table"))
 
-  for (colName in c("cohortID", "pixelIndex", "gcids", "ages")){
+  for (colName in c("cohortID", "pixelIndex", "gcids", "age")){
     expect_true(colName %in% names(simTest$cohortDT))
     expect_true(all(!is.na(simTest$cohortDT[[colName]])))
   }
@@ -96,9 +93,9 @@ test_that("Integration: CBM_dataPrep and disturbances", {
 
   # Check spinup ages are all >= 3
   expect_true("ageSpinup" %in% names(simTest$cohortDT))
-  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$ages >= 3],
-               simTest$cohortDT$ages[simTest$cohortDT$ages >= 3])
-  expect_true(all(simTest$ageSpinup[simTest$cohortDT$ages < 3] == 3))
+  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$age >= 3],
+               simTest$cohortDT$age[simTest$cohortDT$age >= 3])
+  expect_true(all(simTest$ageSpinup[simTest$cohortDT$age < 3] == 3))
 
   # Check number of valid cohorts (no NAs in any column)
   expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))

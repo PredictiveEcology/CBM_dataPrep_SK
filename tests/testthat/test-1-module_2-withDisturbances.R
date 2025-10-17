@@ -1,30 +1,27 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Module runs with disturbances", {
+test_that("Module: with example disturbances", {
 
   ## Run simInit and spades ----
 
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "1-module_2-disturbances")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
   # Set up project
+  projectName <- "1-module_2-disturbances"
+  times       <- list(start = 2012, end = 2012)
+
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
 
-      times = list(start = 1998, end = 2000),
-
       modules = "CBM_dataPrep_SK",
+      times   = times,
       paths   = list(
-        projectPath = projectPath,
+        projectPath = spadesTestPaths$projectPath,
         modulePath  = spadesTestPaths$modulePath,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(projectPath, "outputs")
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       ),
 
       disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
@@ -51,6 +48,10 @@ test_that("Module runs with disturbances", {
   # masterRaster
   expect_true(!is.null(simTest$masterRaster))
   expect_true(inherits(simTest$masterRaster, "SpatRaster"))
+
+  # adminLocator
+  expect_true(!is.null(simTest$adminLocator))
+  expect_equal(simTest$adminLocator, "Saskatchewan")
 
   # ageLocator
   expect_true(!is.null(simTest$ageLocator))
