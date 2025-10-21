@@ -196,7 +196,7 @@ Init <- function(sim){
     levels(sim$spsLocator) <- data.frame(
       value = 1:7,
       #LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla"),
-      species = c("Balsam fir", "Balsam poplar", "Black spruce", "Jack pine", "Trembling aspen", "White birch", "White spruce")
+      species = c("Balsam fir", "Balsam poplar", "Black spruce", "Jack pine", "Trembling aspen", "Paper birch", "White spruce")
     )
   }
 
