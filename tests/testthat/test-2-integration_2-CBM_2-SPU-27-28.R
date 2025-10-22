@@ -1,16 +1,13 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM: SK test area (SPU 27 & 28) 2012", {
+test_that("Integration: CBM: SK test area (SPU 27 & 28)", {
 
   ## Run simInit and spades ----
 
-  # Skip on GHA
-  testthat::skip_on_ci()
-
   # Set up project
   projectName <- "2-intg_2-CBM_2-SPU-27-28"
-  times       <- list(start = 2012, end = 2012)
+  times       <- list(start = 1985, end = 1985)
 
   simInitInput <- SpaDEStestMuffleOutput(
 
