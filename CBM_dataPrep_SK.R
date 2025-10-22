@@ -43,17 +43,24 @@ defineModule(sim, list(
       objectName = "ageSpinupMin", objectClass = "numeric",
       desc = "Minimum age for cohorts during spinup."),
     expectsInput(
-      objectName = "gcIndexLocator", objectClass = "sf|SpatRaster",
-      desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1RWzETOXk0IbIUkSFvbPm46MGaFHgcjEr"),
+      objectName = "spsLocator", objectClass = "sf|SpatRaster",
+      desc = "Spatial data source of cohort species locations.",
+      sourceURL = "https://drive.google.com/file/d/1wQwL595kkxseq9CtDKLvHQgJ8JxS8x-L"),
+    expectsInput(
+      objectName = "prodLocator", objectClass = "sf|SpatRaster",
+      desc = "Spatial data source of productivity class locations.",
+      sourceURL = "https://drive.google.com/file/d/14JfZm4sIxxKT5pxaEBE0Sf2HH10dOe_c"),
+    expectsInput(
+      objectName = "curveID", objectClass = "character",
+      desc = "Growth curve ID."),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
+      sourceURL = "https://drive.google.com/file/d/1rnBRxkvUj7whrVJ8vr9-IpjNTUTdQl-F"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Growth curve volumes.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
+      sourceURL = "https://drive.google.com/file/d/1rnBRxkvUj7whrVJ8vr9-IpjNTUTdQl-F"),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
       sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
@@ -85,17 +92,17 @@ defineModule(sim, list(
       objectName = "ageSpinupMin", objectClass = "integer",
       desc = "Default minimum age for cohorts during spinup is set to 3 if `ageLocator` not provided elsewhere by user."),
     createsOutput(
-      objectName = "gcIndexLocator", objectClass = "SpatRaster",
-      desc = "Default `gcIndexLocator` if not provided elsewhere by user."),
+      objectName = "cohortLocators", objectClass = "list",
+      desc = "List of cohort locators including `spsLocator` and `prodLocator`."),
+    createsOutput(
+      objectName = "curveID", objectClass = "character",
+      desc = "Default `userGcMeta` growth curve ID."),
     createsOutput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Default `userGcMeta` if not provided elsewhere by user."),
     createsOutput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Default `userGcM3` if not provided elsewhere by user."),
-    createsOutput(
-      objectName = "curveID", objectClass = "character",
-      desc = "`gcIndexLocator`, `userGcMeta`, and `userGcM3` growth curve ID."),
     createsOutput(
       objectName = "disturbanceRasters", objectClass = "list",
       desc = "The Wulder and White disturbance rasters if they are used."),
@@ -117,6 +124,12 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim){
+
+  # Set cohort locators
+  sim$cohortLocators <- c(sim$cohortLocators, list(
+    species   = sim$spsLocator,
+    prodClass = sim$prodLocator
+  ))
 
   # Read Wulder and White disturbances rasters
   if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL"))){
@@ -169,6 +182,24 @@ Init <- function(sim){
     )
   }
 
+  # Cohort species
+  if (!suppliedElsewhere("spsLocator")){
+
+    sim$spsLocator <- prepInputs(
+      destinationPath = inputPath(sim),
+      url        = extractURL("spsLocator"),
+      targetFile = "casfri_dom2-Byte.tif",
+      fun        = terra::rast
+    )
+
+    # Source: https://drive.google.com/file/d/1w_qoT87TwjClWLz8sheBEzrNoPYrGpN6
+    levels(sim$spsLocator) <- data.frame(
+      value = 1:7,
+      #LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla"),
+      species = c("Balsam fir", "Balsam poplar", "Black spruce", "Jack pine", "Trembling aspen", "Paper birch", "White spruce")
+    )
+  }
+
   # Cohort ages
   if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
 
@@ -185,50 +216,74 @@ Init <- function(sim){
     sim$ageSpinupMin <- 3
   }
 
-  # Growth curve locations
-  if (!any(sapply(c("gcIndexLocator", "gcIndexLocatorURL"), suppliedElsewhere, sim))){
+  # Cohort growth curves
+  if (!suppliedElsewhere("userGcMeta", sim) & !suppliedElsewhere("userGcM3", sim)){
 
-    message("User has not supplied growth curve locations ('gcIndexLocator' or 'gcIndexLocatorURL'). ",
+    message("User has not supplied growth curves ('userGcMeta' and 'userGcM3'). ",
             "Default for Saskatchewan will be used.")
 
-    sim$gcIndexLocator <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("gcIndexLocator"),
-      targetFile = "gcIndex-Byte.tif",
-      fun        = terra::rast
-    )
-  }
+    # Set curveID columns
+    if (!suppliedElsewhere("curveID", sim)) sim$curveID <- c("species", "prodClass")
 
-  # Growth curve metadata
-  if (!any(sapply(c("userGcMeta", "userGcMetaURL"), suppliedElsewhere, sim))){
-
-    message("User has not supplied growth curve metadata ('userGcMeta' or 'userGcMetaURL'). ",
-            "Default for Saskatchewan will be used.")
-
-    sim$userGcMeta <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("userGcMeta"),
-      targetFile = "gcMetaEg.csv",
-      fun        = data.table::fread
-    )
-    data.table::setnames(sim$userGcMeta, names(sim$userGcMeta)[[1]], "curveID")
-    data.table::setkey(sim$userGcMeta, curveID)
-  }
-
-  # Growth curve volumes
-  if (!any(sapply(c("userGcM3", "userGcM3URL"), suppliedElsewhere, sim))){
-
-    message("User has not supplied growth curve volumes ('userGcM3' or 'userGcM3URL'). ",
-            "Default for Saskatchewan will be used.")
-
-    sim$userGcM3 <- prepInputs(
+    # Read growth curves from CSV
+    yieldTbl <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("userGcM3"),
-      targetFile = "userGcM3.csv",
+      targetFile = "yield_1_7.csv",
       fun        = data.table::fread
-    )
-    data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("curveID", "Age", "MerchVolume"))
-    data.table::setkeyv(sim$userGcM3, c("curveID", "Age"))
+    ) |> subset(ForestDistrict == "Saskatchewan" & !is.na(prodClass))
+
+    # Create unique curve ID
+    yieldTbl[, curveID := .GRP, by = eval(paste0("Age", 0:250))]
+
+    if (!suppliedElsewhere("userGcMeta", sim)){
+
+      sim$userGcMeta <- unique(yieldTbl[, .(species = Species, prodClass, curveID)])
+      data.table::setkey(sim$userGcMeta, species, prodClass)
+
+      sim$userGcMeta[species == "Unspecified conifers - Genus type", species := "Coniferous"]
+
+      # Save to outputs directory
+      outCSV <- file.path(outputPath(sim), "CBM_dataPrep_SK", "userGcMeta.csv")
+      dir.create(dirname(outCSV), recursive = TRUE, showWarnings = FALSE)
+      data.table::fwrite(sim$userGcMeta, outCSV)
+    }
+
+    if (!suppliedElsewhere("userGcM3", sim)){
+
+      sim$userGcM3 <- data.table::rbindlist(apply(
+        unique(yieldTbl[, .SD, .SDcols = c("curveID", paste0("Age", 0:250))]),
+        1, function(r){
+        data.table::data.table(
+          curveID     = r[["curveID"]],
+          Age         = 0:250,
+          MerchVolume = r[paste0("Age", 0:250)]
+        )
+      }, simplify = FALSE))
+      data.table::setkey(sim$userGcM3, curveID, Age)
+
+      # Save to outputs directory
+      outCSV <- file.path(outputPath(sim), "CBM_dataPrep_SK", "userGcM3.csv")
+      dir.create(dirname(outCSV), recursive = TRUE, showWarnings = FALSE)
+      data.table::fwrite(sim$userGcM3, outCSV)
+    }
+
+    # Site productivity
+    if (!suppliedElsewhere("prodLocator")){
+
+      sim$prodLocator <- prepInputs(
+        destinationPath = inputPath(sim),
+        url        = extractURL("prodLocator"),
+        targetFile = "site_productivity.tif",
+        fun        = terra::rast
+      )
+
+      # Source: https://drive.google.com/file/d/1fMpm2m-oaLFjfZLsxOIKz2KDr7II_QiV
+      levels(sim$prodLocator) <- data.frame(
+        value = 0:3,
+        prodClass = c(NA, "G", "M", "P")
+      )
+    }
   }
 
   # Disturbance metadata

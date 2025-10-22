@@ -65,9 +65,13 @@ test_that("Module: with example disturbances", {
   expect_true(!is.null(simTest$ageSpinupMin))
   expect_true(inherits(simTest$ageSpinupMin, "numeric"))
 
-  # gcIndexLocator
-  expect_true(!is.null(simTest$gcIndexLocator))
-  expect_true(inherits(simTest$gcIndexLocator, "SpatRaster"))
+  # spsLocator
+  expect_true(!is.null(simTest$spsLocator))
+  expect_true(inherits(simTest$spsLocator, "SpatRaster"))
+
+  # prodLocator
+  expect_true(!is.null(simTest$prodLocator))
+  expect_true(inherits(simTest$prodLocator, "SpatRaster"))
 
   # userGcMeta
   expect_true(!is.null(simTest$userGcMeta))
