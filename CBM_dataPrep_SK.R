@@ -243,6 +243,10 @@ Init <- function(sim){
 
       sim$userGcMeta[species == "Unspecified conifers - Genus type", species := "Coniferous"]
 
+      # Apply trembling aspen curves to white birch
+      sim$userGcMeta[species == "White birch", curveID := sim$userGcMeta[
+        species == "Trembling aspen" & prodClass == "M", curveID]]
+
       # Save to outputs directory
       outCSV <- file.path(outputPath(sim), "CBM_dataPrep_SK", "userGcMeta.csv")
       dir.create(dirname(outCSV), recursive = TRUE, showWarnings = FALSE)
