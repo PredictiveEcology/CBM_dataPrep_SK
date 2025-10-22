@@ -166,9 +166,9 @@ Init <- function(sim){
   if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
 
   # Master raster
-  if (!any(sapply(c("masterRaster", "masterRasterURL"), suppliedElsewhere, sim))){
+  if (!suppliedElsewhere("masterRaster")){
 
-    message("User has not supplied a master raster ('masterRaster' or 'masterRasterURL'). ",
+    message("User has not supplied a master raster ('masterRaster'). ",
             "Default for Saskatchewan will be used.")
 
     sim$masterRaster <- terra::rast(
@@ -201,9 +201,9 @@ Init <- function(sim){
   }
 
   # Cohort ages
-  if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
+  if (!suppliedElsewhere("ageLocator")){
 
-    message("User has not supplied cohort age locations ('ageLocator' or 'ageRasterURL'). ",
+    message("User has not supplied cohort age locations ('ageLocator''). ",
             "Default for Saskatchewan will be used.")
 
     sim$ageLocator <- prepInputs(
