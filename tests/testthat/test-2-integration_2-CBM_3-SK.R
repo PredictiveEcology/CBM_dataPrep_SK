@@ -1,7 +1,7 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM: SK test area (SPU 28) 1985", {
+test_that("Integration: CBM: SK", {
 
   ## Run simInit and spades ----
 
@@ -9,7 +9,7 @@ test_that("Integration: CBM: SK test area (SPU 28) 1985", {
   testthat::skip_on_ci()
 
   # Set up project
-  projectName <- "2-intg_2-CBM_1-SPU-28"
+  projectName <- "2-intg_2-CBM_3-SK"
   times       <- list(start = 1985, end = 1985)
 
   simInitInput <- SpaDEStestMuffleOutput(
@@ -31,17 +31,6 @@ test_that("Integration: CBM: SK test area (SPU 28) 1985", {
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
         outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-      ),
-
-      # Set required packages for project set up
-      require = "terra",
-
-      # Set study area
-      masterRaster = terra::rast(
-        crs  = "EPSG:3979",
-        ext  = c(xmin = -687696, xmax = -681036, ymin = 711955, ymax = 716183),
-        res  = 30,
-        vals = 1L
       )
     )
   )

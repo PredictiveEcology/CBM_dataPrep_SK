@@ -1,7 +1,7 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
+test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
 
   ## Run simInit and spades ----
 

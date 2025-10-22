@@ -7,7 +7,7 @@ test_that("Module: defaults", {
 
   # Set up project
   projectName <- "1-module_1-defaults"
-  times       <- list(start = 2012, end = 2012)
+  times       <- list(start = 1985, end = 1985)
 
   simInitInput <- SpaDEStestMuffleOutput(
 
