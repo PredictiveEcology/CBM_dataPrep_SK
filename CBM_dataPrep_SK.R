@@ -51,9 +51,6 @@ defineModule(sim, list(
       desc = "Spatial data source of productivity class locations.",
       sourceURL = "https://drive.google.com/file/d/14JfZm4sIxxKT5pxaEBE0Sf2HH10dOe_c"),
     expectsInput(
-      objectName = "curveID", objectClass = "character",
-      desc = "Growth curve ID."),
-    expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
       sourceURL = "https://drive.google.com/file/d/1rnBRxkvUj7whrVJ8vr9-IpjNTUTdQl-F"),
@@ -134,11 +131,28 @@ Init <- function(sim) return(invisible(sim))
 
 PrepCohortData <- function(sim){
 
-  # Set cohort locators
-  sim$cohortLocators <- c(sim$cohortLocators, list(
-    species   = sim$spsLocator,
-    prodClass = sim$prodLocator
-  ))
+  cohortData <- list()
+
+  # Site productivity
+  if (!is.null(sim$prodLocator)){
+    cohortData[["prodClass"]] <- sim$prodLocator
+  }
+
+  # Species
+  if (!is.null(sim$spsLocator)){
+
+    spsCol <- if (!is.null(terra::cats(sim$spsLocator)[[1]])){
+      names(terra::cats(sim$spsLocator)[[1]])[[2]]
+    }else "species"
+
+    cohortData[[spsCol]] <- sim$spsLocator
+  }
+
+  # Add data to cohort locators
+  sim$cohortLocators <- c(sim$cohortLocators, cohortData)
+
+  # Set curveID
+  if (is.null(sim$curveID)) sim$curveID <- names(cohortData)
 
   # Return simList
   return(invisible(sim))
@@ -220,8 +234,7 @@ PrepTestDisturbances <- function(sim){
     # Source: https://drive.google.com/file/d/1w_qoT87TwjClWLz8sheBEzrNoPYrGpN6
     levels(sim$spsLocator) <- data.frame(
       value = 1:7,
-      #LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla"),
-      species = c("Balsam fir", "Balsam poplar", "Black spruce", "Jack pine", "Trembling aspen", "White birch", "White spruce")
+      LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
     )
   }
 
@@ -246,9 +259,6 @@ PrepTestDisturbances <- function(sim){
 
     message("User has not supplied growth curves ('userGcMeta' and 'userGcM3'). ",
             "Default for Saskatchewan will be used.")
-
-    # Set curveID columns
-    if (!suppliedElsewhere("curveID", sim)) sim$curveID <- c("species", "prodClass")
 
     # Read growth curves from CSV
     yieldTbl <- prepInputs(
