@@ -116,14 +116,23 @@ doEvent.CBM_dataPrep_SK <- function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
     init = {
+
       sim <- Init(sim)
+
+      sim <- PrepCohortData(sim)
+
+      if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL"))){
+        sim <- PrepTestDisturbances(sim)
+      }
     },
     warning(noEventWarning(sim))
   )
   return(invisible(sim))
 }
 
-Init <- function(sim){
+Init <- function(sim) return(invisible(sim))
+
+PrepCohortData <- function(sim){
 
   # Set cohort locators
   sim$cohortLocators <- c(sim$cohortLocators, list(
@@ -131,30 +140,46 @@ Init <- function(sim){
     prodClass = sim$prodLocator
   ))
 
-  # Read Wulder and White disturbances rasters
-  if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL"))){
+  # Return simList
+  return(invisible(sim))
+}
 
-    # Download archive of disturbance rasters
-    archiveDir <- prepInputs(
-      destinationPath = inputPath(sim),
-      url         = extractURL("disturbanceRastersURL"),
-      archive     = "disturbance_testArea.zip",
-      targetFile  = "disturbance_testArea",
-      alsoExtract = do.call(c, lapply(1985:2011, function(simYear){
-        paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
-      })),
-      fun = NA)
+PrepTestDisturbances <- function(sim){
 
-    # Prepare files by year
-    grdFiles <- list.files(archiveDir, pattern = "\\.grd$", recursive = TRUE, full.names = TRUE)
-    grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
-    names(grdFiles) <- grdYears
+  # Disturbance metadata
+  distMeta <- prepInputs(
+    destinationPath = inputPath(sim),
+    url        = extractURL("disturbanceMeta"),
+    targetFile = "SK_disturbances.csv",
+    fun        = data.table::fread
+  )
+  distMeta <- unique(
+    distMeta[, .(eventID = rasterID, disturbance_type_id, wholeStand, name = distName, description)])
+  distMeta$sourceValue <- distMeta$eventID
 
-    # Set disturbanceRasters list
-    sim$disturbanceRasters <- c(
-      sim$disturbanceRasters,
-      lapply(setNames(1:5, 1:5), function(eventID) grdFiles))
-  }
+  sim$disturbanceMeta <- data.table::rbindlist(
+    list(sim$disturbanceMeta, distMeta), fill = TRUE)
+
+  # Download archive of disturbance rasters
+  archiveDir <- prepInputs(
+    destinationPath = inputPath(sim),
+    url         = extractURL("disturbanceRastersURL"),
+    archive     = "disturbance_testArea.zip",
+    targetFile  = "disturbance_testArea",
+    alsoExtract = do.call(c, lapply(1985:2011, function(simYear){
+      paste0("disturbance_testArea/SaskDist_", simYear, c(".grd", ".gri", ".tif"))
+    })),
+    fun = NA)
+
+  # Prepare files by year
+  grdFiles <- list.files(archiveDir, pattern = "\\.grd$", recursive = TRUE, full.names = TRUE)
+  grdYears <- sapply(strsplit(tools::file_path_sans_ext(basename(grdFiles)), "_"), `[[`, 2)
+  names(grdFiles) <- grdYears
+
+  # Set disturbanceRasters list
+  sim$disturbanceRasters <- c(
+    sim$disturbanceRasters,
+    lapply(setNames(1:5, 1:5), function(eventID) grdFiles))
 
   # Return simList
   return(invisible(sim))
@@ -285,23 +310,6 @@ Init <- function(sim){
         prodClass = c(NA, "G", "M", "P")
       )
     }
-  }
-
-  # Disturbance metadata
-  if (identical(sim$disturbanceRastersURL, extractURL("disturbanceRastersURL")) &
-      !any(sapply(c("disturbanceMeta", "disturbanceMetaURL"), suppliedElsewhere, sim))){
-
-    sim$disturbanceMeta <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("disturbanceMeta"),
-      targetFile = "SK_disturbances.csv",
-      fun        = data.table::fread
-    )
-    sim$disturbanceMeta <- unique(
-      sim$disturbanceMeta[, .(
-        eventID = rasterID, disturbance_type_id, wholeStand,
-        name = distName, description)])
-    sim$disturbanceMeta$sourceValue <- sim$disturbanceMeta$eventID
   }
 
   # Return simList
