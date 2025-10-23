@@ -23,7 +23,7 @@ defineModule(sim, list(
     "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
-    defineParameter(".useCache", "logical", TRUE, NA, NA, "Cache module events")
+    defineParameter(".useCache", "character", ".inputObjects", NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
     expectsInput(
