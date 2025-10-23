@@ -5,8 +5,9 @@ test_that("Integration: CBM: SK", {
 
   ## Run simInit and spades ----
 
-  # Skip on GHA
+  # Only run manually
   testthat::skip_on_ci()
+  testthat::skip_if(testthat::is_testing())
 
   # Set up project
   projectName <- "2-intg_2-CBM_3-SK"

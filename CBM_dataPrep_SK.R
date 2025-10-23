@@ -133,11 +133,6 @@ PrepCohortData <- function(sim){
 
   cohortData <- list()
 
-  # Site productivity
-  if (!is.null(sim$prodLocator)){
-    cohortData[["prodClass"]] <- sim$prodLocator
-  }
-
   # Species
   if (!is.null(sim$spsLocator)){
 
@@ -146,6 +141,11 @@ PrepCohortData <- function(sim){
     }else "species"
 
     cohortData[[spsCol]] <- sim$spsLocator
+  }
+
+  # Site productivity
+  if (!is.null(sim$prodLocator)){
+    cohortData[["prodClass"]] <- sim$prodLocator
   }
 
   # Add data to cohort locators
@@ -278,6 +278,10 @@ PrepTestDisturbances <- function(sim){
 
       # Rename conifers
       sim$userGcMeta[species == "Unspecified conifers - Genus type", species := "Coniferous"]
+
+      # Apply trembling aspen curves to white birch
+      sim$userGcMeta[species == "White birch", curveID := sim$userGcMeta[
+        species == "Trembling aspen" & prodClass == "M", curveID]]
 
       # Save to outputs directory
       outCSV <- file.path(outputPath(sim), "CBM_dataPrep_SK", "userGcMeta.csv")
