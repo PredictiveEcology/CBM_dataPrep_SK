@@ -241,7 +241,7 @@ PrepTestDisturbances <- function(sim){
     sim$ageSpinupMin <- 3
   }
 
-  # Cohort growth curves
+  # Growth curves
   if (!suppliedElsewhere("userGcMeta", sim) & !suppliedElsewhere("userGcM3", sim)){
 
     message("User has not supplied growth curves ('userGcMeta' and 'userGcM3'). ",
@@ -306,7 +306,7 @@ PrepTestDisturbances <- function(sim){
 
       # Source: https://drive.google.com/file/d/1fMpm2m-oaLFjfZLsxOIKz2KDr7II_QiV
       levels(sim$prodLocator) <- data.frame(
-        value = 0:3,
+        value     = 0:3,
         prodClass = c(NA, "G", "M", "P")
       )
     }
