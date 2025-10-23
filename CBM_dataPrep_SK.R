@@ -95,8 +95,8 @@ defineModule(sim, list(
       objectName = "cohortLocators", objectClass = "list",
       desc = "List of cohort locators including `spsLocator` and `prodLocator`."),
     createsOutput(
-      objectName = "curveID", objectClass = "character",
-      desc = "Default `userGcMeta` growth curve ID."),
+      objectName = "curveID", objectClass = "data.table",
+      desc = "Default `curveID` if not provided elsewhere by user."),
     createsOutput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Default `userGcMeta` if not provided elsewhere by user."),
