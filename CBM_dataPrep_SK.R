@@ -19,7 +19,8 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("CBM_dataPrep_SK.Rmd"),
   reqdPkgs = list(
-    "reproducible (>=2.1.2)", "data.table", "terra"
+    "reproducible (>=2.1.2)", "data.table", "terra", "sf",
+    "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
     defineParameter(".useCache", "logical", TRUE, NA, NA, "Cache module events")
@@ -134,7 +135,20 @@ PrepCohortData <- function(sim){
   cohortData <- list()
 
   # Species
-  if (!is.null(sim$spsLocator)){
+  if (identical(sim$spsLocator, "SCANFI-2020-LandR")){
+
+    # Read SCANFI species SK curve matching CSV
+    # Source: https://docs.google.com/spreadsheets/d/1UIHgNgQe7iMVw8uf4bU3Z1DaMuNVCXHDVwoT1SXCN5U/edit?gid=801685974
+    spsMatchCSV <- file.path(dataPath(sim), "SCANFI-species.csv")
+    if (!file.exists(spsMatchCSV)) stop("Species match CSV not found: ", spsMatchCSV)
+    spsMatch <- data.table::fread(spsMatchCSV)
+
+    # Map SCANFI species to SK curves
+    cohortData$LandR <- SCANFImatchSpeciesToCurves(
+      sim$masterRaster, spsMatch = spsMatch
+    ) |> Cache()
+
+  }else if (!is.null(sim$spsLocator)){
 
     spsCol <- if (!is.null(terra::cats(sim$spsLocator)[[1]])){
       names(terra::cats(sim$spsLocator)[[1]])[[2]]
