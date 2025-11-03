@@ -82,5 +82,9 @@ test_that("Module: SCANFI 2020 data", {
       val = c(0:7),
       N   = c(4477, 4, 97, 23727, 59, 1900, 773, 629)
     ), tolerance = 10, scale = 1)
+
+  # Age backtracking
+  expect_equal(simTest$ageBacktrackSplit, "sw_hw")
+
 })
 

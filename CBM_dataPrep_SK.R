@@ -87,6 +87,9 @@ defineModule(sim, list(
       objectName = "ageDataYear", objectClass = "integer",
       desc = "Data year of default `ageLocator` if not provided elsewhere by user."),
     createsOutput(
+      objectName = "ageBacktrackSplit", objectClass = "character",
+      desc = "Default `ageBacktrackSplit` if not provided elsewhere by user."),
+    createsOutput(
       objectName = "ageSpinupMin", objectClass = "integer",
       desc = "Default minimum age for cohorts during spinup is set to 3 if `ageLocator` not provided elsewhere by user."),
     createsOutput(
@@ -147,6 +150,12 @@ PrepCohortData <- function(sim){
     cohortData$LandR <- SCANFImatchSpeciesToCurves(
       sim$masterRaster, spsMatch = spsMatch
     ) |> Cache()
+
+    # Split age backtracking by forest type
+    if (identical(sim$ageLocator, "SCANFI-2020-age") & is.null(sim$ageBacktrackSplit)){
+
+      sim$ageBacktrackSplit <- "sw_hw"
+    }
 
   }else if (!is.null(sim$spsLocator)){
 
