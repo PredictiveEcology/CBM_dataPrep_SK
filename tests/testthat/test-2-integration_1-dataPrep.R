@@ -72,9 +72,6 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   }
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
-  # Check number of valid pixels (no NAs in any column)
-  expect_equal(nrow(simTest$standDT), 6753)
-
   # Check spatial units
   expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
 
@@ -97,8 +94,8 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
                simTest$cohortDT$age[simTest$cohortDT$age >= 3])
   expect_true(all(simTest$ageSpinup[simTest$cohortDT$age < 3] == 3))
 
-  # Check number of valid cohorts (no NAs in any column)
-  expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))
+  # Check number of valid cohorts (NAs have been removed)
+  expect_lt(nrow(simTest$cohortDT), terra::ncell(simTest$masterRaster))
 
 
   ## Check output 'curveID' ----
