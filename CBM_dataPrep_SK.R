@@ -154,7 +154,8 @@ PrepCohortData <- function(sim){
     # Split age backtracking by forest type
     if (identical(sim$ageLocator, "SCANFI-2020-age") & is.null(sim$ageBacktrackSplit)){
 
-      sim$ageBacktrackSplit <- "sw_hw"
+      # Temporary: disable
+      # sim$ageBacktrackSplit <- "sw_hw"
     }
 
   }else if (!is.null(sim$spsLocator)){
