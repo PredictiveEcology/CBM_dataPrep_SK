@@ -22,75 +22,34 @@ This documentation is work in progress. Potential discrepancies and omissions ma
 
 ## Overview
 
-[CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) processes spatially explicit inputs for use in [CBM_vol2biomass_SK](https://github.com/PredictiveEcology/CBM_vol2biomass_SK.git) and [CBM_core](https://github.com/PredictiveEcology/CBM_core.git). In *SpaDES-speak*, it has two events, the `init` event (scheduled once) and the `readDisturbanceEvents` which processes disturbances (usually provided as rasters) into a table format used in [CBM_core](https://github.com/PredictiveEcology/CBM_core.git). [SpaDES](https://SpaDES.PredictiveEcology.org) was designed for spatially explicit modelling and provides a wide variety of tools to support it. [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) makes use of these tools. All location specific or spatial information is processed in this module. This module's inputs are study area and scenario specific making [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) the most idiosyncratic module of the [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) [deck](https://predictiveecology.github.io/spadesCBM/lexicon.html), meaning that this is the module that will require users to adapt their available information for their study area. We use an example that simulates a scenario where remotely-sensed disturbances are simulated in the managed forests of Saskatchewan from 1985 to 2011, as described in @boisvenue2016 (scenario = time horizon + disturbances). We suggest that users wanting to run [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) for their study-area modify this module, adapting their inputs to produce the outputs of [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git). The module would then become **CBM_dataPrep_NewStudyArea**.
-
-## Background
-The default structure of [SpaDES](https://SpaDES.PredictiveEcology.org) modules has the [`.inputObjects`](https://predictiveecology.github.io/spadesCBM/lexicon.html#inputobjects) function, and in this function in [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git), we make use of the [`reproducible::prepInputs`](https://predictiveecology.org/training/_book/prepInputs.html) function, an important part of the [SpaDES](https://SpaDES.PredictiveEcology.org) toolkit (see the [SpaDES training manual](https://predictiveecology.org/training/_book/) for more details), enabling repeatable continuous workflows. [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) falls back to the defaults CBM parameters for running the SK managed forests, unless alternative information is provided by the user. 
-
-Our example study area is defined by the object [`masterRaster`](https://predictiveecology.github.io/spadesCBM/lexicon.html#masterRaster). In our example, this raster is provided directly, but note that any R-code can replace current input processing examples in [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git). The characteristics (projection, resolution, etc.) of this [`masterRaster`](https://predictiveecology.github.io/spadesCBM/lexicon.html#masterRaster) are transferred to other rasters used in the simulation via the function [`reproducible::prepInputs`](https://predictiveecology.org/training/_book/prepInputs.html). In our example, rasters for age (`ageRaster`), growth curves location (`gcIndexRaster`), and [ecozone](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit) (`ecoRaster`)  and [spatial unit](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit) (`spuRaster`), link back to the default parameters for Canada. Yearly (as this is the time step in our example - run `times(simMngedSK)` to see `current`, `start`, and `end` time) disturbance rasters provide the type and location of disturbances. All rasters are matched to the [`masterRaster`](https://predictiveecology.github.io/spadesCBM/lexicon.html#masterRaster) using the [`reproducible::prepInputs`](https://predictiveecology.org/training/_book/prepInputs.html) function. Default parameters are expected from [CBM_defaults](https://github.com/PredictiveEcology/CBM_defaults.git) (`spinupSQL`, `species_tr`) and one table is provided as [`cbmAdmin`](https://predictiveecology.github.io/spadesCBM/lexicon.html#cbmAdmin) for user convenience. In addition to location (study area or [`masterRaster`](https://predictiveecology.github.io/spadesCBM/lexicon.html#masterRaster)) and inventory information (age, here provided as a raster), the user is expected to provide: growth curves ($m^3/ha$) that are linked to each pixel or stand (`userGcM3`), the leading species for each curve (`gcMeta`), and information about disturbances (`userDist`).
-
+[CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) processes study area-specific spatially explicit inputs for use in [CBM_vol2biomass_SK](https://github.com/PredictiveEcology/CBM_vol2biomass_SK.git) and [CBM_core](https://github.com/PredictiveEcology/CBM_core.git). [SpaDES](https://SpaDES.PredictiveEcology.org) was designed for spatially explicit modelling and provides a wide variety of tools to support it. [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) makes use of these tools. This module's inputs are study area and scenario specific making [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) the most idiosyncratic module of the [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) [deck](https://predictiveecology.github.io/spadesCBM/lexicon.html), meaning that this is the module that will require users to adapt their available information for their study area. We use an example that simulates a scenario where remotely-sensed disturbances are simulated in the managed forests of Saskatchewan from 1985 to 2011, as described in @boisvenue2016 (scenario = time horizon + disturbances). We suggest that users wanting to run [spadesCBM](https://github.com/PredictiveEcology/spadesCBM.git) for their study-area modify this module, adapting their inputs to produce the outputs of [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git). The module would then become **CBM_dataPrep_NewStudyArea**.
 
 ## Inputs
 
 | Name | Class | Description | Source |
 |-----------------|-----------------|---------------------|-----------------|
-| dbPath | Character | Path to the CBM defaults SQL database | CBM_defaults |
-| disturbanceMatrix | Data table | Default disturbance data | CBM_defaults |
-| CBMspecies | Data table | Default species data | CBM_defaults |
-| gcMeta | Data table | Growth curve metadata | [Google Drive](https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing) |
-| userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
 | masterRaster | SpatRaster | Raster of study area | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW) |
-| ageRaster | SpatRaster | Raster ages for each pixel | [Google Drive](https://drive.google.com/file/d/1hylk0D1vO19Dpg4zFtnSNhnyYP4j-bEA) |
-| gcIndexRaster | SpatRaster | Raster giving the growth curve value for each pixel | [Google Drive](https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr) |
-| spuLocator | SpatRaster | Canada's spatial units as polygon features with spatial unit IDs | CBM_defaults |
-| ecoLocator | SpatRaster | Canada's ecozone as polygon features with ecozone IDs | CBM_defaults |
-| disturbanceRasters | Character | Disturbance rasters for the study area for the duration of simulation | User provided, for SK: [Google Drive](https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt) |
-| userDist | Data table | User provided disturbance table defining distubances and values in `disturbanceRasters` | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1n4fXwUkX5GPyWJgr0QQx65roAIaxmcWJ) |
+| ageLocator | SpatRaster | Spatial data source of stand age | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) | 
+| ageDataYear | Numeric | Year that the ages in ageLocator represent | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) |
+| ageSpinupMin | Numeric | Minimum age for cohorts during spinup | Default is set to 3 |
+| gcIndexLocator | SpatRaster | Raster giving the growth curve value for each pixel | [Google Drive](https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr) |
+| userGcMeta | Data table | Growth curve metadata | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9) |
+| userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
+| disturbanceMeta | Data table |  Table defining the disturbance event types | [Google Drive](https://drive.google.com/file/d/12z25mHl7McRm1ee7V7dgtSHdLP8-QEZp) |
 
 ## Module functioning
 
-[CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) has 2 events; the `init` event, which is run only once, and the `readDisturbanceEvents` event, which is repeated for each simulation year.
-
-### `init`
-This first event performs the majority of the data processing steps in this module. The study area's various spatial data is also processed into a table format for use in the [CBM_core](https://github.com/PredictiveEcology/CBM_core.git) and [CBM_vol2biomass_SK](https://github.com/PredictiveEcology/CBM_vol2biomass_SK.git) modules. This event is run only once.
-
-### `readDisturbanceEvents`
-This short event serves to process disturbance events for each simulation year. Separating this processing from the `init` event enables dynamic linkages to disturbance models. However, in our example, disturbances are provided in the form of remotely-sensed disturbance rasters. 
-
-### Disturbances
-
-The user identifies what disturbances occur on the landscape during the simulations. Our example points to a file that has the disturbance name and description, `userDist`. The table also provides a raster values that differentiates between disturbance types (in our example, we provide one raster per year, which has all disturbances in that year, each having a unique raster value, as opposed to one individual raster per year per disturbance type), and identifies if the disturbance is a whole stand disturbance or not. These disturbances need to be match to a disturbance matrix, which identifies the proportion of carbon transferred from one pool ([source_pool](https://predictiveecology.github.io/spadesCBM/lexicon.html#source_pool-and-sink_pool)) to another pool ([sink_pool](https://predictiveecology.github.io/spadesCBM/lexicon.html#source_pool-and-sink_pool)) when a disturbance occurs in that pixel. If there is more than one match (e.g., more than one type of fire), the user will be prompted to select from a list of disturbance matrices available for the study area, for each [spatial unit](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit) and [ecozone](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit) combinations. The default matrices are provided in the Canada-wide defaults and are region ([spatial unit](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit) and [ecozone](https://predictiveecology.github.io/spadesCBM/lexicon.html#ecozone-vs-spatial-unit)) specific. These are read-in by [CBM_defaults](https://github.com/PredictiveEcology/CBM_defaults.git) and available to the [CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) module via the [simList()](https://predictiveecology.org/training/_book/simList.html). We provide an example of selection in our example. The user-prompts look like this:
-![](https://github.com/PredictiveEcology/spadesCBM/blob/main/manual/images/disturbanceSelection.png?raw=true){fig-align="center"}
-
-There are 468 unique disturbance matrices identified in the defaults. Since root parameters and snag carbon transfer rates have hardwood and softwood specific rates, each disturbance has a hardwood and a softwood instance, which means we have 234 unique disturbances across Canada as defaults in this modelling system, one for hardwood and one for softwood. A user could add or modify the proportions transferred between pools to represent a disturbance (**NOTE THAT THIS WOULD HAVE TO HAPPEN IN THE CSVs, and even then would that work? Does libcbm point to those files? what if we change them? QUESTION FOR SCOTT, VINI and SUSAN**). 
-**Add a section on how one would modify the disturbance matrices**
-
-*Figure 1: Proportional carbon transfers between pools during a fire in Saskatchewan*
-
-![](https://raw.githubusercontent.com/PredictiveEcology/spadesCBM/main/manual/images/WildfireAlluvial.png){fig-align="center" width="600"}
-
-There are a series of helper functions in [CBMutils](https://github.com/PredictiveEcology/CBMutils.git) to help users explore and navigate disturbance matrices: 
-- [spuDist](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L275) for extracting the disturbances in a specific spatial unit,
-- [simDist()](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L458) which lists the disturbances used in a simulation, and
-- [seeDist()](https://github.com/PredictiveEcology/CBMutils/blob/25f9b873ed7c2303864fa1b2d9243b8a7e20663e/R/CBM-DB_disturbances.R#L388) which pulls out the proportions from source to sink pools.
-
-Because growth curves can be identified by strata, multiple columns can be used to identify growth curves using the `curveID` object. In our example, only **gcids** is used.
+[CBM_dataPrep_SK](https://github.com/PredictiveEcology/CBM_dataPrep_SK.git) has a single event used to read in user-provided information or provide study area specific defaults. By default, it sets the administrative boundary name, reads in and prepares default disturbance rasters for SK (Wulder and white), sets the study area by creating `masterRaster`, and reads in any study area specific rasters. 
 
 ## Outputs
 
 | Name | Class | Description |
 |------|-------|-------------|
-| allPixDT | Data table | Summary table of raster input data with 1 row for each `masterRaster` pixel |
-| standDT | Data table | Table of stand attributes. Stands can have 1 or more cohorts |
-| cohortDT | Data table | TAble of cohort attributes |
-| spatialDT    | Data table  | Summary table of raster input data with 1 row for each `masterRaster pixel` that is not `NA` | 
-| curveID | Character | Column names in `cohortDT` that uniquely define each cohort growth curve ID |
-| gcMeta | Data table | Growth curve metadata |
-| userGcM3 | Data table | User provided growth curve data |
-| disturbanceMeta | Data table | Table defining disturbance event types |
-| disturbanceEvents | Data table | Table with disturbance events for each simulation year |
-| speciesPixelGroup | Data table | Table connecting pixel groups to species IDs |
-
+| masterRaster | SpatRaster | Raster of study area |
+| adminLocator | Character | Spatial data source of Canada's administrative boundary names |
+| curveID | Character |
+| disturbanceRasters | list | Disturbance rasters for each simulation year |
+| disturbanceMeta | Data table | Disturbance rasters metadata |
 
 ## Links to other modules
 

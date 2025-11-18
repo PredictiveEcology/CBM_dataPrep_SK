@@ -27,12 +27,15 @@ defineModule(sim, list(
   inputObjects = bindrows(
     expectsInput(
       objectName = "masterRaster", objectClass = "SpatRaster",
-      desc = "Raster template defining the study area. Default is a test area in the managed forests of SK.",
-      sourceURL = "https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW"),
+      desc = "Raster template defining the study area. Default is a test area in the managed forests of SK."),
+    expectsInput(
+      objectName  = "adminLocator",
+      objectClass = "sourceID|sf|SpatRaster|character",
+      desc = "Canada administrative boundary name(s). Defaults to 'Saskatchewan'."),
     expectsInput(
       objectName = "ageLocator", objectClass = "sf|SpatRaster",
-      desc = "Spatial data source of stand ages. Default is the 2012 CASFRI inventory.",
-      sourceURL = "https://drive.google.com/file/d/1hylk0D1vO19Dpg4zFtnSNhnyYP4j-bEA"),
+      desc = "Spatial data source of cohort ages. Default is the 2012 CASFRI inventory backtracked to 1985.",
+      sourceURL = "https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs"),
     expectsInput(
       objectName = "ageDataYear", objectClass = "numeric",
       desc = "Year that the ages in `ageLocator` represent."),
@@ -42,15 +45,15 @@ defineModule(sim, list(
     expectsInput(
       objectName = "gcIndexLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of growth curve index locations.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr"),
+      sourceURL = "https://drive.google.com/file/d/1RWzETOXk0IbIUkSFvbPm46MGaFHgcjEr"),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.table",
       desc = "Growth curve metadata.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ"),
+      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.table",
       desc = "Growth curve volumes.", #TODO: Define default data source
-      sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
+      sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
     expectsInput(
       objectName = "disturbanceRastersURL", objectClass = "character",
       sourceURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt",
@@ -69,6 +72,9 @@ defineModule(sim, list(
     createsOutput(
       objectName = "masterRaster", objectClass = "SpatRaster",
       desc = "Default `masterRaster` if not provided elsewhere by user."),
+    createsOutput(
+      objectName = "adminLocator", objectClass = "character",
+      desc = "Default `adminLocator` if not provided elsewhere by user."),
     createsOutput(
       objectName = "ageLocator", objectClass = "SpatRaster",
       desc = "Default `ageLocator` if not provided elsewhere by user."),
@@ -143,38 +149,39 @@ Init <- function(sim){
 
 .inputObjects <- function(sim) {
 
+  # Admin boundary name
+  if (!suppliedElsewhere("adminLocator", sim)) sim$adminLocator <- "Saskatchewan"
+
   # Master raster
   if (!any(sapply(c("masterRaster", "masterRasterURL"), suppliedElsewhere, sim))){
 
     message("User has not supplied a master raster ('masterRaster' or 'masterRasterURL'). ",
             "Default for Saskatchewan will be used.")
 
-    sim$masterRaster <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("masterRaster"),
-      targetFile = "ldSp_TestArea.tif",
-      fun        = terra::rast
-    )
-
-    sim$masterRaster <- terra::classify(
-      sim$masterRaster, cbind(0, NA)
+    sim$masterRaster <- terra::rast(
+      crs  = "EPSG:3979",
+      res  = 30,
+      vals = 1L,
+      xmin = -1077673.4762,
+      xmax =  -426673.4762,
+      ymin =   108487.9315,
+      ymax =   971077.9315
     )
   }
 
-  # Stand ages
+  # Cohort ages
   if (!any(sapply(c("ageLocator", "ageLocatorURL"), suppliedElsewhere, sim))){
 
-    message("User has not supplied stand age locations ('ageLocator' or 'ageRasterURL'). ",
+    message("User has not supplied cohort age locations ('ageLocator' or 'ageRasterURL'). ",
             "Default for Saskatchewan will be used.")
 
     sim$ageLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("ageLocator"),
-      targetFile = "age_TestArea.tif",
+      targetFile = "age1CASFRI-Byte.tif",
       fun        = terra::rast
     )
-
-    sim$ageDataYear <- 2012
+    sim$ageDataYear  <- 1985
     sim$ageSpinupMin <- 3
   }
 
@@ -187,7 +194,7 @@ Init <- function(sim){
     sim$gcIndexLocator <- prepInputs(
       destinationPath = inputPath(sim),
       url        = extractURL("gcIndexLocator"),
-      targetFile = "gcIndex.tif",
+      targetFile = "gcIndex-Byte.tif",
       fun        = terra::rast
     )
   }

@@ -1,27 +1,27 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Module runs with defaults", {
+test_that("Module: defaults", {
 
   ## Run simInit and spades ----
 
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "1-module_1-defaults")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
   # Set up project
+  projectName <- "1-module_1-defaults"
+  times       <- list(start = 2012, end = 2012)
+
   simInitInput <- SpaDEStestMuffleOutput(
 
     SpaDES.project::setupProject(
+
       modules = "CBM_dataPrep_SK",
+      times   = times,
       paths   = list(
-        projectPath = projectPath,
+        projectPath = spadesTestPaths$projectPath,
         modulePath  = spadesTestPaths$modulePath,
         packagePath = spadesTestPaths$packagePath,
         inputPath   = spadesTestPaths$inputPath,
         cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(projectPath, "outputs")
+        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
       )
     )
   )
@@ -46,6 +46,10 @@ test_that("Module runs with defaults", {
   # masterRaster
   expect_true(!is.null(simTest$masterRaster))
   expect_true(inherits(simTest$masterRaster, "SpatRaster"))
+
+  # adminLocator
+  expect_true(!is.null(simTest$adminLocator))
+  expect_equal(simTest$adminLocator, "Saskatchewan")
 
   # ageLocator
   expect_true(!is.null(simTest$ageLocator))
