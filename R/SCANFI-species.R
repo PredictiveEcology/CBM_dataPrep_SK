@@ -89,7 +89,7 @@ SCANFImatchSpeciesToCurves <- function(
 
     spsIDs <- data.table::rbindlist(parallel::mclapply(
       lapply(1:nrow(tileExt), function(i){
-        terra::cells(spsRast, terra::vect(sf::st_crop(adminMask, tileExt[i,])), touches = FALSE)[,2]
+        terra::cells(spsRast, terra::vect(sf::st_crop(adminMask, tileExt[i,])), touches = TRUE)[,2]
       }),
       mc.cores = parallel.cores,
       function(cellIdx){
