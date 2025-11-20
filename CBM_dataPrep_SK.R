@@ -23,6 +23,8 @@ defineModule(sim, list(
     "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
+    defineParameter("parallel.cores",    "integer", NA,   NA, NA, "Number of cores to use in parallel processing"),
+    defineParameter("parallel.tileSize", "integer", 2500, NA, NA, "Raster tile size when using parallel processing"),
     defineParameter(".useCache", "character", ".inputObjects", NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
@@ -148,8 +150,10 @@ PrepCohortData <- function(sim){
 
     # Map SCANFI species to SK curves
     cohortData$LandR <- SCANFImatchSpeciesToCurves(
-      sim$masterRaster, spsMatch = spsMatch
-    ) |> Cache()
+      sim$masterRaster, spsMatch = spsMatch,
+      parallel.cores    = P(sim)$parallel.cores,
+      parallel.tileSize = P(sim)$parallel.tileSize
+    ) |> Cache(omitArgs = c("parallel.cores", "parallel.tileSize"))
 
     # Split age backtracking by forest type
     if (identical(sim$ageLocator, "SCANFI-2020-age") & is.null(sim$ageBacktrackSplit)){
