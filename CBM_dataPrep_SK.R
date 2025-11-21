@@ -23,8 +23,10 @@ defineModule(sim, list(
     "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
-    defineParameter("parallel.cores",    "integer", NA,   NA, NA, "Number of cores to use in parallel processing"),
-    defineParameter("parallel.tileSize", "integer", 2500, NA, NA, "Raster tile size when using parallel processing"),
+    defineParameter("parallel.cores",    "integer", NA_integer_, NA, NA,
+                    "Number of cores to use in parallel processing"),
+    defineParameter("parallel.tileSize", "integer", 2500L, NA, NA,
+                    "Raster tile size when using parallel processing"),
     defineParameter(".useCache", "character", ".inputObjects", NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
