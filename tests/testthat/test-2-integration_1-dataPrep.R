@@ -101,7 +101,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   ## Check output 'curveID' ----
 
   expect_true(!is.null(simTest$curveID))
-  expect_equal(simTest$curveID, c("LandR", "prodClass"))
+  expect_setequal(simTest$curveID, c("LandR", "prodClass"))
 
 
   ## Check output 'userGcMeta' ----

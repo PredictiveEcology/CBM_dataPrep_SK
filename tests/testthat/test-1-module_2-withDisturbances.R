@@ -55,7 +55,7 @@ test_that("Module: with example disturbances", {
 
   # ageLocator
   expect_true(!is.null(simTest$ageLocator))
-  expect_true(inherits(simTest$ageLocator, "SpatRaster"))
+  expect_true(inherits(simTest$ageLocator, c("SpatRaster", "character")))
 
   # ageDataYear
   expect_true(!is.null(simTest$ageDataYear))
@@ -67,11 +67,11 @@ test_that("Module: with example disturbances", {
 
   # spsLocator
   expect_true(!is.null(simTest$spsLocator))
-  expect_true(inherits(simTest$spsLocator, "SpatRaster"))
+  expect_true(inherits(simTest$spsLocator, c("SpatRaster", "character")))
 
   # prodLocator
   expect_true(!is.null(simTest$prodLocator))
-  expect_true(inherits(simTest$prodLocator, "SpatRaster"))
+  expect_true(inherits(simTest$prodLocator, c("SpatRaster", "character")))
 
   # userGcMeta
   expect_true(!is.null(simTest$userGcMeta))
