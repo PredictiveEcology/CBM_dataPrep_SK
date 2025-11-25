@@ -27,7 +27,7 @@ defineModule(sim, list(
                     "Number of cores to use in parallel processing"),
     defineParameter("parallel.tileSize", "integer", 2500L, NA, NA,
                     "Raster tile size when using parallel processing"),
-    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA, "Cache module events")
+    defineParameter(".useCache", "character", ".inputObjects", NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
     expectsInput(
