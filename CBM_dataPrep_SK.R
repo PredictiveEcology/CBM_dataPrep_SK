@@ -27,7 +27,7 @@ defineModule(sim, list(
                     "Number of cores to use in parallel processing"),
     defineParameter("parallel.tileSize", "integer", 2500L, NA, NA,
                     "Raster tile size when using parallel processing"),
-    defineParameter(".useCache", "character", ".inputObjects", NA, NA, "Cache module events")
+    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA, "Cache module events")
   ),
   inputObjects = bindrows(
     expectsInput(
@@ -162,6 +162,14 @@ PrepCohortData <- function(sim){
       parallel.tileSize = P(sim)$parallel.tileSize
     ) |> Cache(omitArgs = c("parallel.cores", "parallel.tileSize"))
 
+    ## 2025-11-25: SpatRaster categories are inconsistently cached
+    ## Temporary fix is to write this to file
+    outPath <- file.path(outputPath(sim), "CBM_dataPrep_SK", "SCANFI-species.tif")
+    dir.create(dirname(outPath), recursive = TRUE, showWarnings = FALSE)
+    terra::writeRaster(cohortData$LandR, outPath, datatype = "INT1U", NAflag = -Inf, overwrite = TRUE)
+    attr(outPath, "dataPrepCats") <- terra::cats(cohortData$LandR)[[1]]
+    cohortData$LandR <- outPath
+
     # Split age backtracking by forest type
     if (identical(sim$ageLocator, "SCANFI-2020-age") & is.null(sim$ageBacktrackSplit)){
 
@@ -171,9 +179,13 @@ PrepCohortData <- function(sim){
 
   }else if (!is.null(sim$spsLocator)){
 
-    spsCol <- if (!is.null(terra::cats(sim$spsLocator)[[1]])){
-      names(terra::cats(sim$spsLocator)[[1]])[[2]]
-    }else "species"
+    if (is(sim$spsLocator, "SpatRaster") && !is.null(terra::cats(sim$spsLocator)[[1]])){
+      spsCol <- names(terra::cats(sim$spsLocator)[[1]])[[2]]
+    }else if (!is.null(attr(sim$spsLocator, "dataPrepCats"))){
+      spsCol <- names(attr(sim$spsLocator, "dataPrepCats"))[[2]]
+    }else{
+      spscol <- "species"
+    }
 
     cohortData[[spsCol]] <- sim$spsLocator
   }
@@ -313,12 +325,18 @@ PrepTestDisturbances <- function(sim){
       destinationPath = inputPath(sim),
       url        = extractURL("prodLocator"),
       targetFile = "site_productivity.tif",
-      fun        = terra::rast
-    )
+      fun        = NA
+    ) |> as.character()
 
     # Source: https://drive.google.com/file/d/1fMpm2m-oaLFjfZLsxOIKz2KDr7II_QiV
-    levels(sim$prodLocator) <- data.frame(
-      value     = 0:3,
+
+    ## 2025-11-25: SpatRaster categories are inconsistently cached
+    # levels(sim$prodLocator) <- data.frame(
+    #   value     = 0:3,
+    #   prodClass = c(NA, "G", "M", "P")
+    # )
+    attr(sim$prodLocator, "dataPrepCats") <- data.frame(
+      rastID    = 0:3,
       prodClass = c(NA, "G", "M", "P")
     )
   }
@@ -330,13 +348,19 @@ PrepTestDisturbances <- function(sim){
       destinationPath = inputPath(sim),
       url        = extractURL("spsLocator"),
       targetFile = "casfri_dom2-Byte.tif",
-      fun        = terra::rast
-    )
+      fun        = NA
+    ) |> as.character()
 
     # Source: https://drive.google.com/file/d/1w_qoT87TwjClWLz8sheBEzrNoPYrGpN6
-    levels(sim$spsLocator) <- data.frame(
-      value = 1:7,
-      LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
+
+    ## 2025-11-25: SpatRaster categories are inconsistently cached
+    # levels(sim$spsLocator) <- data.frame(
+    #   value = 1:7,
+    #   LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
+    # )
+    attr(sim$spsLocator, "dataPrepCats") <- data.frame(
+      rastID = 1:7,
+      LandR  = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
     )
   }
 
