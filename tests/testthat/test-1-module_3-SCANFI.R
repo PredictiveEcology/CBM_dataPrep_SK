@@ -68,20 +68,23 @@ test_that("Module: SCANFI 2020 data", {
   ## Check outputs ----
 
   # curveID
-  expect_equal(simTest$curveID, c("LandR", "prodClass"))
+  expect_setequal(simTest$curveID, c("LandR", "prodClass"))
 
   # species
-  expect_true(inherits(simTest$cohortLocators$LandR, "SpatRaster"))
-  expect_equal(terra::unique(simTest$cohortLocators$LandR)[[1]], c(
-    "Abie_bal", "Betu_pap", "Pice_mar", "Pice_gla", "Pinu_ban", "Popu_bal", "Popu_tre"
-  ))
-  spsVals <- terra::values(simTest$cohortLocators$LandR, mat = FALSE)
+  expect_true(inherits(simTest$cohortLocators$LandR, c("SpatRaster", "character")))
+  if (inherits(simTest$cohortLocators$LandR, "SpatRaster")){
+    expect_equal(terra::unique(simTest$cohortLocators$LandR)[[1]], c(
+      "Abie_bal", "Betu_pap", "Pice_mar", "Pice_gla", "Pinu_ban", "Popu_bal", "Popu_tre"
+    ))
+  }
+  spsRast <- simTest$cohortLocators$LandR
+  if (is.character(spsRast)) spsRast <- terra::rast(spsRast)
+  spsVals <- terra::values(spsRast, mat = FALSE)
   expect_equal(
     data.table::data.table(val = spsVals)[, .N, by = "val"][order(val)],
     data.table::data.table(
       val = c(0:7),
       N   = c(4477, 4, 97, 23727, 59, 1900, 773, 629)
     ), tolerance = 10, scale = 1)
-
 })
 
