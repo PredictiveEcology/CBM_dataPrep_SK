@@ -85,7 +85,7 @@ defineModule(sim, list(
       objectName = "adminLocator", objectClass = "character",
       desc = "Default `adminLocator` if not provided elsewhere by user."),
     createsOutput(
-      objectName = "ageLocator", objectClass = "SpatRaster",
+      objectName = "ageLocator", objectClass = "SpatRaster|character",
       desc = "Default `ageLocator` if not provided elsewhere by user."),
     createsOutput(
       objectName = "ageDataYear", objectClass = "integer",
@@ -141,6 +141,11 @@ PrepCohortData <- function(sim){
 
   cohortData <- list()
 
+  # Site productivity
+  if (!is.null(sim$prodLocator)){
+    cohortData[["prodClass"]] <- sim$prodLocator
+  }
+
   # Species
   if (identical(sim$spsLocator, "SCANFI-2020-LandR")){
 
@@ -171,11 +176,6 @@ PrepCohortData <- function(sim){
     }else "species"
 
     cohortData[[spsCol]] <- sim$spsLocator
-  }
-
-  # Site productivity
-  if (!is.null(sim$prodLocator)){
-    cohortData[["prodClass"]] <- sim$prodLocator
   }
 
   # Add data to cohort locators
@@ -251,39 +251,6 @@ PrepTestDisturbances <- function(sim){
     )
   }
 
-  # Cohort species
-  if (!suppliedElsewhere("spsLocator")){
-
-    sim$spsLocator <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("spsLocator"),
-      targetFile = "casfri_dom2-Byte.tif",
-      fun        = terra::rast
-    )
-
-    # Source: https://drive.google.com/file/d/1w_qoT87TwjClWLz8sheBEzrNoPYrGpN6
-    levels(sim$spsLocator) <- data.frame(
-      value = 1:7,
-      LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
-    )
-  }
-
-  # Cohort ages
-  if (!suppliedElsewhere("ageLocator")){
-
-    message("User has not supplied cohort age locations ('ageLocator''). ",
-            "Default for Saskatchewan will be used.")
-
-    sim$ageLocator <- prepInputs(
-      destinationPath = inputPath(sim),
-      url        = extractURL("ageLocator"),
-      targetFile = "age1CASFRI-Byte.tif",
-      fun        = terra::rast
-    )
-    sim$ageDataYear  <- 1985
-    sim$ageSpinupMin <- 3
-  }
-
   # Growth curves
   if (!suppliedElsewhere("userGcMeta", sim) & !suppliedElsewhere("userGcM3", sim)){
 
@@ -337,23 +304,56 @@ PrepTestDisturbances <- function(sim){
       dir.create(dirname(outCSV), recursive = TRUE, showWarnings = FALSE)
       data.table::fwrite(sim$userGcM3, outCSV)
     }
+  }
 
-    # Site productivity
-    if (!suppliedElsewhere("prodLocator")){
+  # Site productivity
+  if (!suppliedElsewhere("prodLocator")){
 
-      sim$prodLocator <- prepInputs(
-        destinationPath = inputPath(sim),
-        url        = extractURL("prodLocator"),
-        targetFile = "site_productivity.tif",
-        fun        = terra::rast
-      )
+    sim$prodLocator <- prepInputs(
+      destinationPath = inputPath(sim),
+      url        = extractURL("prodLocator"),
+      targetFile = "site_productivity.tif",
+      fun        = terra::rast
+    )
 
-      # Source: https://drive.google.com/file/d/1fMpm2m-oaLFjfZLsxOIKz2KDr7II_QiV
-      levels(sim$prodLocator) <- data.frame(
-        value     = 0:3,
-        prodClass = c(NA, "G", "M", "P")
-      )
-    }
+    # Source: https://drive.google.com/file/d/1fMpm2m-oaLFjfZLsxOIKz2KDr7II_QiV
+    levels(sim$prodLocator) <- data.frame(
+      value     = 0:3,
+      prodClass = c(NA, "G", "M", "P")
+    )
+  }
+
+  # Cohort species
+  if (!suppliedElsewhere("spsLocator")){
+
+    sim$spsLocator <- prepInputs(
+      destinationPath = inputPath(sim),
+      url        = extractURL("spsLocator"),
+      targetFile = "casfri_dom2-Byte.tif",
+      fun        = terra::rast
+    )
+
+    # Source: https://drive.google.com/file/d/1w_qoT87TwjClWLz8sheBEzrNoPYrGpN6
+    levels(sim$spsLocator) <- data.frame(
+      value = 1:7,
+      LandR = c("Abie_bal", "Popu_bal", "Pice_mar", "Pinu_ban", "Popu_tre", "Betu_pap", "Pice_gla")
+    )
+  }
+
+  # Cohort ages
+  if (!suppliedElsewhere("ageLocator")){
+
+    message("User has not supplied cohort age locations ('ageLocator''). ",
+            "Default for Saskatchewan will be used.")
+
+    sim$ageLocator <- prepInputs(
+      destinationPath = inputPath(sim),
+      url        = extractURL("ageLocator"),
+      targetFile = "age1CASFRI-Byte.tif",
+      fun        = NA
+    ) |> as.character()
+    sim$ageDataYear  <- 1985
+    sim$ageSpinupMin <- 3
   }
 
   # Return simList
