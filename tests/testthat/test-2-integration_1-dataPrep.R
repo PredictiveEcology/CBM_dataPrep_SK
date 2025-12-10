@@ -7,7 +7,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
 
   # Set up project
   projectName <- "2-intg_1-dataPrep"
-  times       <- list(start = 1998, end = 2000)
+  times       <- list(start = 1985, end = 1993)
 
   simInitInput <- SpaDEStestMuffleOutput(
 
@@ -132,7 +132,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   }
 
   expect_true(all(simTest$disturbanceEvents$year %in% 1985:2011))
-  expect_equal(nrow(subset(simTest$disturbanceEvents, year %in% 1998:2000)), 1393)
+  expect_equal(nrow(simTest$disturbanceEvents[year == 1993,]), 145)
 
 
   ## Check output 'disturbanceMeta' ----
