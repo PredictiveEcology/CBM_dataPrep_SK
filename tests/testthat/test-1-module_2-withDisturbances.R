@@ -61,10 +61,6 @@ test_that("Module: with example disturbances", {
   expect_true(!is.null(simTest$ageDataYear))
   expect_true(inherits(simTest$ageDataYear, "numeric"))
 
-  # ageSpinupMin
-  expect_true(!is.null(simTest$ageSpinupMin))
-  expect_true(inherits(simTest$ageSpinupMin, "numeric"))
-
   # spsLocator
   expect_true(!is.null(simTest$spsLocator))
   expect_true(inherits(simTest$spsLocator, c("SpatRaster", "character")))

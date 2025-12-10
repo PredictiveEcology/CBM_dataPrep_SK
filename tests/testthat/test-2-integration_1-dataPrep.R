@@ -88,12 +88,6 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
 
   expect_identical(data.table::key(simTest$cohortDT), "cohortID")
 
-  # Check spinup ages are all >= 3
-  expect_true("ageSpinup" %in% names(simTest$cohortDT))
-  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$age >= 3],
-               simTest$cohortDT$age[simTest$cohortDT$age >= 3])
-  expect_true(all(simTest$ageSpinup[simTest$cohortDT$age < 3] == 3))
-
   # Check number of valid cohorts (NAs have been removed)
   expect_lt(nrow(simTest$cohortDT), terra::ncell(simTest$masterRaster))
 

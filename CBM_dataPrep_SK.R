@@ -45,9 +45,6 @@ defineModule(sim, list(
       objectName = "ageDataYear", objectClass = "numeric",
       desc = "Year that the ages in `ageLocator` represent."),
     expectsInput(
-      objectName = "ageSpinupMin", objectClass = "numeric",
-      desc = "Minimum age for cohorts during spinup."),
-    expectsInput(
       objectName = "spsLocator", objectClass = "sf|SpatRaster",
       desc = "Spatial data source of cohort species locations.",
       sourceURL = "https://drive.google.com/file/d/1wQwL595kkxseq9CtDKLvHQgJ8JxS8x-L"),
@@ -93,9 +90,6 @@ defineModule(sim, list(
     createsOutput(
       objectName = "ageBacktrackSplit", objectClass = "character",
       desc = "Default `ageBacktrackSplit` if not provided elsewhere by user."),
-    createsOutput(
-      objectName = "ageSpinupMin", objectClass = "integer",
-      desc = "Default minimum age for cohorts during spinup is set to 3 if `ageLocator` not provided elsewhere by user."),
     createsOutput(
       objectName = "cohortLocators", objectClass = "list",
       desc = "List of cohort locators including `spsLocator` and `prodLocator`."),
@@ -345,8 +339,8 @@ PrepTestDisturbances <- function(sim){
       targetFile = "age1CASFRI-Byte.tif",
       fun        = NA
     ) |> as.character()
-    sim$ageDataYear  <- 1985
-    sim$ageSpinupMin <- 3
+
+    sim$ageDataYear <- 1985
   }
 
   # Return simList
