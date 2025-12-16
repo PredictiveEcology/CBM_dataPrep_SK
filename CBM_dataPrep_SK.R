@@ -20,6 +20,7 @@ defineModule(sim, list(
   documentation = list("CBM_dataPrep_SK.Rmd"),
   reqdPkgs = list(
     "reproducible (>=2.1.2)", "data.table", "terra", "sf",
+    "googledrive", "httr2", "rvest",
     "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
