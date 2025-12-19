@@ -236,7 +236,6 @@ PrepTestDisturbances <- function(sim){
       ymax =   971077.9315
     )
   }
-
   # Growth curves
   if (!suppliedElsewhere("userGcMeta", sim) & !suppliedElsewhere("userGcM3", sim)){
 
