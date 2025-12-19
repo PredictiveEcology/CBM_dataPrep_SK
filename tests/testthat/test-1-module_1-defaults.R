@@ -7,7 +7,7 @@ test_that("Module: defaults", {
 
   # Set up project
   projectName <- "1-module_1-defaults"
-  times       <- list(start = 2012, end = 2012)
+  times       <- list(start = 1985, end = 1985)
 
   simInitInput <- SpaDEStestMuffleOutput(
 
@@ -53,19 +53,19 @@ test_that("Module: defaults", {
 
   # ageLocator
   expect_true(!is.null(simTest$ageLocator))
-  expect_true(inherits(simTest$ageLocator, "SpatRaster"))
+  expect_true(inherits(simTest$ageLocator, c("SpatRaster", "character")))
 
   # ageDataYear
   expect_true(!is.null(simTest$ageDataYear))
   expect_true(inherits(simTest$ageDataYear, "numeric"))
 
-  # ageSpinupMin
-  expect_true(!is.null(simTest$ageSpinupMin))
-  expect_true(inherits(simTest$ageSpinupMin, "numeric"))
+  # spsLocator
+  expect_true(!is.null(simTest$spsLocator))
+  expect_true(inherits(simTest$spsLocator, c("SpatRaster", "character")))
 
-  # gcIndexLocator
-  expect_true(!is.null(simTest$gcIndexLocator))
-  expect_true(inherits(simTest$gcIndexLocator, "SpatRaster"))
+  # prodLocator
+  expect_true(!is.null(simTest$prodLocator))
+  expect_true(inherits(simTest$prodLocator, c("SpatRaster", "character")))
 
   # userGcMeta
   expect_true(!is.null(simTest$userGcMeta))

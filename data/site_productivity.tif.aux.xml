@@ -1,0 +1,11 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>prodClass</Description>
+    <CategoryNames>
+      <Category>____NA_+</Category>
+      <Category>G</Category>
+      <Category>M</Category>
+      <Category>P</Category>
+    </CategoryNames>
+  </PAMRasterBand>
+</PAMDataset>

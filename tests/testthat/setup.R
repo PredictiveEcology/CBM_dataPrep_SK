@@ -18,8 +18,7 @@ spadesTestPaths <- SpaDEStestSetUpDirectories()
 
 # Install required packages
 withr::with_options(c(timeout = 600), Require::Install(
-  c(SpaDES.core::packages(modules = basename(getwd()), paths = "..")[[1]],
-    "SpaDES.project", "googledrive"),
+  c(SpaDES.core::packages(modules = basename(getwd()), paths = "..")[[1]], "SpaDES.project"),
   repos = unique(c("predictiveecology.r-universe.dev", getOption("repos")))
 ))
 

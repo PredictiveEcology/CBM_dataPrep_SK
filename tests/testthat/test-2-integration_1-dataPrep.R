@@ -1,13 +1,13 @@
 
 if (!testthat::is_testing()) source(testthat::test_path("setup.R"))
 
-test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
+test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
 
   ## Run simInit and spades ----
 
   # Set up project
   projectName <- "2-intg_1-dataPrep"
-  times       <- list(start = 1998, end = 2000)
+  times       <- list(start = 1985, end = 1993)
 
   simInitInput <- SpaDEStestMuffleOutput(
 
@@ -72,9 +72,6 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   }
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
-  # Check number of valid pixels (no NAs in any column)
-  expect_equal(nrow(simTest$standDT), 6751)
-
   # Check spatial units
   expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
 
@@ -91,14 +88,14 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
 
   expect_identical(data.table::key(simTest$cohortDT), "cohortID")
 
-  # Check spinup ages are all >= 3
-  expect_true("ageSpinup" %in% names(simTest$cohortDT))
-  expect_equal(simTest$cohortDT$ageSpinup[simTest$cohortDT$age >= 3],
-               simTest$cohortDT$age[simTest$cohortDT$age >= 3])
-  expect_true(all(simTest$ageSpinup[simTest$cohortDT$age < 3] == 3))
+  # Check number of valid cohorts (NAs have been removed)
+  expect_lt(nrow(simTest$cohortDT), terra::ncell(simTest$masterRaster))
 
-  # Check number of valid cohorts (no NAs in any column)
-  expect_equal(nrow(simTest$cohortDT), nrow(simTest$standDT))
+
+  ## Check output 'curveID' ----
+
+  expect_true(!is.null(simTest$curveID))
+  expect_setequal(simTest$curveID, c("LandR", "prodClass"))
 
 
   ## Check output 'userGcMeta' ----
@@ -117,7 +114,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   expect_true(!is.null(simTest$userGcM3))
   expect_true(inherits(simTest$userGcM3, "data.table"))
 
-  for (colName in c(simTest$curveID, "Age", "MerchVolume")){
+  for (colName in c("curveID", "Age", "MerchVolume")){
     expect_true(colName %in% names(simTest$userGcM3))
     expect_true(all(!is.na(simTest$userGcM3[[colName]])))
   }
@@ -135,7 +132,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28) 2012", {
   }
 
   expect_true(all(simTest$disturbanceEvents$year %in% 1985:2011))
-  expect_equal(nrow(subset(simTest$disturbanceEvents, year %in% 1998:2000)), 1393)
+  expect_equal(nrow(simTest$disturbanceEvents[year == 1993,]), 145)
 
 
   ## Check output 'disturbanceMeta' ----
