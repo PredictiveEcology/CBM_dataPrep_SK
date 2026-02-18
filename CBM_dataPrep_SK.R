@@ -184,7 +184,7 @@ PrepTestDisturbances <- function(sim){
     fun        = data.table::fread
   )
   distMeta <- unique(
-    distMeta[, .(eventID = rasterID, disturbance_type_id, wholeStand, name = distName, description)])
+    distMeta[, .(eventID = rasterID, disturbance_type_name = name, disturbance_type_id, wholeStand)])
   distMeta$sourceValue <- distMeta$eventID
 
   sim$disturbanceMeta <- data.table::rbindlist(
