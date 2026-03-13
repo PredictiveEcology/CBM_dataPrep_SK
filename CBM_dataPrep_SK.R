@@ -12,7 +12,7 @@ defineModule(sim, list(
     person("Susan",   "Murray",    email = "murray.e.susan@gmail.com",           role = c("ctb"))
   ),
   childModules = character(0),
-  version = list(SpaDES.core = "1.0.2", CBM_dataPrep_SK = "2.0.0", CBM_dataPrep = "1.0.0"),
+  version = list(CBM_dataPrep_SK = "1.0.0", CBM_dataPrep = "1.0.0"),
   loadOrder = list(before = c("CBM_defaults", "CBM_dataPrep"), after = c("CBM_vol2biomass", "CBM_core")),
   timeunit = "year",
   timeframe = as.POSIXlt(c(NA, NA)),

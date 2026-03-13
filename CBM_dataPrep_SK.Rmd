@@ -29,10 +29,11 @@ This documentation is work in progress. Potential discrepancies and omissions ma
 | Name | Class | Description | Source |
 |-----------------|-----------------|---------------------|-----------------|
 | masterRaster | SpatRaster | Raster of study area | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1zUyFH8k6Ef4c_GiWMInKbwAl6m6gvLJW) |
-| ageLocator | SpatRaster | Spatial data source of stand age | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) | 
+| adminLocator | SpatRaster | Spatial data source of Canada's administrative boundary names | [Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lpr_000a21a_e.zip) |
+| ageLocator | SpatRaster | Spatial data source of stand age | for SK: [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) | 
 | ageDataYear | Numeric | Year that the ages in ageLocator represent | [2012 CASFRI inventory](https://drive.google.com/file/d/1ip4VGdKjPhQjElxJjHkM_1BoVM2C_sXs) |
-| ageSpinupMin | Numeric | Minimum age for cohorts during spinup | Default is set to 3 |
-| gcIndexLocator | SpatRaster | Raster giving the growth curve value for each pixel | [Google Drive](https://drive.google.com/file/d/1yunkaYCV2LIdqej45C4F9ir5j1An0KKr) |
+| spsLocator | SpatRaster | Spatial data source of cohort species locations | [2012 CASFRI inventory](https://drive.google.com/file/d/1wQwL595kkxseq9CtDKLvHQgJ8JxS8x-L) |
+| prodLocator | SpatRaster | Spatial data source of productivity class locations | [For SK](https://drive.google.com/file/d/14JfZm4sIxxKT5pxaEBE0Sf2HH10dOe_c) |
 | userGcMeta | Data table | Growth curve metadata | User provided, for SK: [Google Drive](https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9) |
 | userGcM3 | Data table | User provided growth curve data | [Google Drive](https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m) |
 | disturbanceMeta | Data table |  Table defining the disturbance event types | [Google Drive](https://drive.google.com/file/d/12z25mHl7McRm1ee7V7dgtSHdLP8-QEZp) |
@@ -47,7 +48,9 @@ This documentation is work in progress. Potential discrepancies and omissions ma
 |------|-------|-------------|
 | masterRaster | SpatRaster | Raster of study area |
 | adminLocator | Character | Spatial data source of Canada's administrative boundary names |
-| curveID | Character |
+| ageLocator | SpatRaster | Spatial data source of cohort ages or a single value to use for all cohorts |
+| cohortLocators | List | List of values or spatial data sources |
+| curveID | Character | Column(s) name(s) uniquely defining each growth curve |
 | disturbanceRasters | list | Disturbance rasters for each simulation year |
 | disturbanceMeta | Data table | Disturbance rasters metadata |
 
