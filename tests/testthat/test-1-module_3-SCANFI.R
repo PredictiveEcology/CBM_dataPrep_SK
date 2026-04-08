@@ -15,53 +15,44 @@ test_that("Module: SCANFI 2020 data", {
   projectName <- "1-module_3-SCANFI-2020"
   times       <- list(start = 2020, end = 2020)
 
-  simInitInput <- SpaDEStestMuffleOutput(
+  simInitInput <- SpaDES.project::setupProject(
 
-    SpaDES.project::setupProject(
+    modules = "CBM_dataPrep_SK",
+    times   = times,
+    paths   = list(
+      projectPath = spadesTestPaths$projectPath,
+      modulePath  = spadesTestPaths$modulePath,
+      packagePath = spadesTestPaths$packagePath,
+      inputPath   = spadesTestPaths$inputPath,
+      cachePath   = spadesTestPaths$cachePath,
+      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
+    ),
 
-      modules = "CBM_dataPrep_SK",
-      times   = times,
-      paths   = list(
-        projectPath = spadesTestPaths$projectPath,
-        modulePath  = spadesTestPaths$modulePath,
-        packagePath = spadesTestPaths$packagePath,
-        inputPath   = spadesTestPaths$inputPath,
-        cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-      ),
+    # Set required packages for project set up
+    require = "terra",
 
-      # Set required packages for project set up
-      require = "terra",
+    # Set study area
+    masterRaster = terra::rast(
+      crs  = "EPSG:3979",
+      res  = 30,
+      vals = 1L,
+      xmin = -687696,
+      xmax = -681036,
+      ymin =  711955,
+      ymax =  716183
+    ),
 
-      # Set study area
-      masterRaster = terra::rast(
-        crs  = "EPSG:3979",
-        res  = 30,
-        vals = 1L,
-        xmin = -687696,
-        xmax = -681036,
-        ymin =  711955,
-        ymax =  716183
-      ),
-
-      # Set input data sources
-      ageLocator = "SCANFI-2020-age",
-      spsLocator = "SCANFI-2020-LandR"
-    )
+    # Set input data sources
+    ageLocator = "SCANFI-2020-age",
+    spsLocator = "SCANFI-2020-LandR"
   )
 
   # Run simInit
-  simTestInit <- SpaDEStestMuffleOutput(
-    SpaDES.core::simInit2(simInitInput)
-  )
-
+  simTestInit <- SpaDES.core::simInit2(simInitInput)
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- SpaDEStestMuffleOutput(
-    SpaDES.core::spades(simTestInit)
-  )
-
+  simTest <- SpaDES.core::spades(simTestInit)
   expect_s4_class(simTest, "simList")
 
 

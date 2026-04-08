@@ -9,55 +9,46 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   projectName <- "2-intg_1-dataPrep"
   times       <- list(start = 1985, end = 1993)
 
-  simInitInput <- SpaDEStestMuffleOutput(
+  simInitInput <- SpaDES.project::setupProject(
 
-    SpaDES.project::setupProject(
+    modules = c(
+      "CBM_dataPrep_SK",
+      paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME", "development"))
+    ),
+    times   = times,
+    paths   = list(
+      projectPath = spadesTestPaths$projectPath,
+      modulePath  = spadesTestPaths$temp$modules,
+      packagePath = spadesTestPaths$packagePath,
+      inputPath   = spadesTestPaths$inputPath,
+      cachePath   = spadesTestPaths$cachePath,
+      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
+    ),
 
-      modules = c(
-        "CBM_dataPrep_SK",
-        paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME", "development"))
-      ),
-      times   = times,
-      paths   = list(
-        projectPath = spadesTestPaths$projectPath,
-        modulePath  = spadesTestPaths$temp$modules,
-        packagePath = spadesTestPaths$packagePath,
-        inputPath   = spadesTestPaths$inputPath,
-        cachePath   = spadesTestPaths$cachePath,
-        outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-      ),
+    # Set required packages for project set up
+    require = "terra",
 
-      # Set required packages for project set up
-      require = "terra",
+    # Set study area
+    masterRaster = terra::rast(
+      crs  = "EPSG:3979",
+      res  = 30,
+      vals = 1L,
+      xmin = -687696,
+      xmax = -681036,
+      ymin =  711955,
+      ymax =  716183
+    ),
 
-      # Set study area
-      masterRaster = terra::rast(
-        crs  = "EPSG:3979",
-        res  = 30,
-        vals = 1L,
-        xmin = -687696,
-        xmax = -681036,
-        ymin =  711955,
-        ymax =  716183
-      ),
-
-      # Set disturbances
-      disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
-    )
+    # Set disturbances
+    disturbanceRastersURL = "https://drive.google.com/file/d/12YnuQYytjcBej0_kdodLchPg7z9LygCt"
   )
 
   # Run simInit
-  simTestInit <- SpaDEStestMuffleOutput(
-    SpaDES.core::simInit2(simInitInput)
-  )
-
+  simTestInit <- SpaDES.core::simInit2(simInitInput)
   expect_s4_class(simTestInit, "simList")
 
   # Run spades
-  simTest <- SpaDEStestMuffleOutput(
-    SpaDES.core::spades(simTestInit)
-  )
-
+  simTest <- SpaDES.core::spades(simTestInit)
   expect_s4_class(simTest, "simList")
 
 
