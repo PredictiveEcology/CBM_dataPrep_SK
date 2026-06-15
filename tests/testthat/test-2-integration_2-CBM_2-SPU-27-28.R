@@ -52,8 +52,6 @@ test_that("Integration: CBM: SK test area (SPU 27 & 28)", {
   expect_s4_class(simTest, "simList")
 
   # Check outputs
-  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), c(27, 28))
-
   expect_true(!is.null(simTest$emissionsProducts))
 
 })

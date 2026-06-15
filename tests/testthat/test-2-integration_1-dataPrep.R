@@ -57,14 +57,15 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   expect_true(!is.null(simTest$standDT))
   expect_true(inherits(simTest$standDT, "data.table"))
 
-  for (colName in c("pixelIndex", "area", "spatial_unit_id")){
+  for (colName in c("pixelIndex", "admin_name", "admin_abbrev", "eco_id")){
     expect_true(colName %in% names(simTest$standDT))
     expect_true(all(!is.na(simTest$standDT[[colName]])))
   }
   expect_identical(data.table::key(simTest$standDT), "pixelIndex")
 
-  # Check spatial units
-  expect_equal(sort(unique(simTest$standDT$spatial_unit_id)), 28)
+  expect_equal(as.character(sort(unique(simTest$standDT$admin_name))), "Saskatchewan")
+  expect_equal(as.character(sort(unique(simTest$standDT$admin_abbrev))), "SK")
+  expect_equal(sort(unique(simTest$standDT$eco_id)), 9)
 
 
   ## Check output 'cohortDT' ----
@@ -72,7 +73,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   expect_true(!is.null(simTest$cohortDT))
   expect_true(inherits(simTest$cohortDT, "data.table"))
 
-  for (colName in c("cohortID", "pixelIndex", "gcids", "age")){
+  for (colName in c("cohortID", "pixelIndex", "age", "LandR", "prodClass")){
     expect_true(colName %in% names(simTest$cohortDT))
     expect_true(all(!is.na(simTest$cohortDT[[colName]])))
   }
@@ -94,7 +95,7 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   expect_true(!is.null(simTest$userGcMeta))
   expect_true(inherits(simTest$userGcMeta, "data.table"))
 
-  for (colName in c(simTest$curveID, "species_id", "sw_hw")){
+  for (colName in simTest$curveID){
     expect_true(colName %in% names(simTest$userGcMeta))
     expect_true(all(!is.na(simTest$userGcMeta[[colName]])))
   }
