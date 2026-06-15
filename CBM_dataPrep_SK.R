@@ -21,7 +21,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "reproducible (>=2.1.2)", "data.table", "terra", "sf",
     "googledrive", "httr2", "rvest",
-    "PredictiveEcology/CBMutils@v2.5.1"
+    "PredictiveEcology/CBMutils@development (>=2.3.2)"
   ),
   parameters = rbind(
     defineParameter("parallel.cores",    "integer", NA_integer_, NA, NA,
