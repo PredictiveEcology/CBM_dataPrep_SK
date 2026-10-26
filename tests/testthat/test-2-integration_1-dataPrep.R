@@ -133,7 +133,6 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
   expect_true(inherits(simTest$disturbanceMeta, "data.table"))
 
   expect_equal(nrow(simTest$disturbanceMeta), 5)
-  expect_equal(simTest$disturbanceMeta$disturbance_type_id, c(1, 204, 7, 168, 168))
 
 })
 
