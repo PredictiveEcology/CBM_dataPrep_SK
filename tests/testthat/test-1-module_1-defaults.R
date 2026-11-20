@@ -6,21 +6,9 @@ test_that("Module: defaults", {
   ## Run simInit and spades ----
 
   # Set up project
-  projectName <- "1-module_1-defaults"
-  times       <- list(start = 1985, end = 1985)
-
-  simInitInput <- SpaDES.project::setupProject(
-
-    modules = "CBM_dataPrep_SK",
-    times   = times,
-    paths   = list(
-      projectPath = spadesTestPaths$projectPath,
-      modulePath  = spadesTestPaths$modulePath,
-      packagePath = spadesTestPaths$packagePath,
-      inputPath   = spadesTestPaths$inputPath,
-      cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-    )
+  simInitInput <- setupProjectTest(
+    projectName = "1-module_1-defaults",
+    times       = list(start = 1985, end = 1985)
   )
 
   # Run simInit

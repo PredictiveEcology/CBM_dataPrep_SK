@@ -5,37 +5,20 @@ test_that("Integration: CBM: SCANFI 2020 data", {
 
   ## Run simInit and spades ----
 
-  ## Skip test if source data is not already available
-  ## Source data is too large to download for a test
-  testthat::skip_if(
-    !file.exists(file.path(spadesTestPaths$inputPath, "SCANFI-2020")),
-    message = "inputs directory does not contain SCANFI-2020 data")
+  skip_if(as.logical(Sys.getenv("CI", FALSE)) & !"main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")))
+  skip_if(is_testing()) # Test expensive: kept for interactive testing
 
   # Set up project
-  projectName <- "2-intg_3-SCANFI-2020"
-  times       <- list(start = 2020, end = 2020)
-
-  simInitInput <- SpaDES.project::setupProject(
-
-    modules = c(
-      paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME", "development")),
+  simInitInput <- setupProjectTest(
+    projectName = "2-intg_3-SCANFI-2020",
+    times       = list(start = 2020, end = 2020),
+    modules     = c(
+      paste0("PredictiveEcology/CBM_defaults@",    ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
       "CBM_dataPrep_SK",
-      paste0("PredictiveEcology/CBM_dataPrep@",    Sys.getenv("BRANCH_NAME", "development")),
-      paste0("PredictiveEcology/CBM_vol2biomass@", Sys.getenv("BRANCH_NAME", "development")),
-      paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME", "development"))
+      paste0("PredictiveEcology/CBM_dataPrep@",    ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
+      paste0("PredictiveEcology/CBM_vol2biomass@", ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
+      paste0("PredictiveEcology/CBM_core@",        ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development"))
     ),
-    times   = times,
-    paths   = list(
-      projectPath = spadesTestPaths$projectPath,
-      modulePath  = spadesTestPaths$temp$modules,
-      packagePath = spadesTestPaths$packagePath,
-      inputPath   = spadesTestPaths$inputPath,
-      cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-    ),
-
-    # Set required packages for project set up
-    require = "terra",
 
     # Set study area
     masterRaster = terra::rast(

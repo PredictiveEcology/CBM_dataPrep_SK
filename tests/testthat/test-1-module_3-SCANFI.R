@@ -5,31 +5,12 @@ test_that("Module: SCANFI 2020 data", {
 
   ## Run simInit and spades ----
 
-  ## Skip test if source data is not already available
-  ## Source data is too large to download for a test
-  testthat::skip_if(
-    !file.exists(file.path(spadesTestPaths$inputPath, "SCANFI-2020")),
-    message = "inputs directory does not contain SCANFI-2020 data")
+  skip_if(is_testing()) # Test expensive: kept for interactive testing
 
   # Set up project
-  projectName <- "1-module_3-SCANFI-2020"
-  times       <- list(start = 2020, end = 2020)
-
-  simInitInput <- SpaDES.project::setupProject(
-
-    modules = "CBM_dataPrep_SK",
-    times   = times,
-    paths   = list(
-      projectPath = spadesTestPaths$projectPath,
-      modulePath  = spadesTestPaths$modulePath,
-      packagePath = spadesTestPaths$packagePath,
-      inputPath   = spadesTestPaths$inputPath,
-      cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-    ),
-
-    # Set required packages for project set up
-    require = "terra",
+  simInitInput <- setupProjectTest(
+    projectName = "1-module_3-SCANFI-2020",
+    times       = list(start = 2020, end = 2020),
 
     # Set study area
     masterRaster = terra::rast(
