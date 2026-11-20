@@ -5,34 +5,20 @@ test_that("Integration: CBM: SK test area (SPU 28)", {
 
   ## Run simInit and spades ----
 
-  # Skip on GHA
-  testthat::skip_on_ci()
+  skip_if(!"main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")))
+  skip_on_ci() # Repetitive
 
   # Set up project
-  projectName <- "2-intg_2-CBM_1-SPU-28"
-  times       <- list(start = 1985, end = 1985)
-
-  simInitInput <- SpaDES.project::setupProject(
-
-    modules = c(
-      paste0("PredictiveEcology/CBM_defaults@",     Sys.getenv("BRANCH_NAME", "development")),
+  simInitInput <- setupProjectTest(
+    projectName = "2-intg_2-CBM_1-SPU-28",
+    times       = list(start = 1985, end = 1985),
+    modules     = c(
+      paste0("PredictiveEcology/CBM_defaults@",     ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
       "CBM_dataPrep_SK",
-      paste0("PredictiveEcology/CBM_dataPrep@",     Sys.getenv("BRANCH_NAME", "development")),
-      paste0("PredictiveEcology/CBM_vol2biomass@",  Sys.getenv("BRANCH_NAME", "development")),
-      paste0("PredictiveEcology/CBM_core@",         Sys.getenv("BRANCH_NAME", "development"))
+      paste0("PredictiveEcology/CBM_dataPrep@",     ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
+      paste0("PredictiveEcology/CBM_vol2biomass@",  ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development")),
+      paste0("PredictiveEcology/CBM_core@",         ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development"))
     ),
-    times   = times,
-    paths   = list(
-      projectPath = spadesTestPaths$projectPath,
-      modulePath  = spadesTestPaths$temp$modules,
-      packagePath = spadesTestPaths$packagePath,
-      inputPath   = spadesTestPaths$inputPath,
-      cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-    ),
-
-    # Set required packages for project set up
-    require = "terra",
 
     # Set study area
     masterRaster = terra::rast(
