@@ -5,7 +5,7 @@ test_that("Integration: CBM: SCANFI 2020 data", {
 
   ## Run simInit and spades ----
 
-  skip_if(!"main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")))
+  skip_if(as.logical(Sys.getenv("CI", FALSE)) & !"main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")))
   skip_if(is_testing()) # Test expensive: kept for interactive testing
 
   # Set up project
