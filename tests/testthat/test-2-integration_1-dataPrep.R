@@ -5,28 +5,16 @@ test_that("Integration: CBM_dataPrep: SK test area (SPU 28)", {
 
   ## Run simInit and spades ----
 
+  skip_if(as.logical(Sys.getenv("CI", FALSE)) & !"main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")))
+
   # Set up project
-  projectName <- "2-intg_1-dataPrep"
-  times       <- list(start = 1985, end = 1993)
-
-  simInitInput <- SpaDES.project::setupProject(
-
-    modules = c(
+  simInitInput <- setupProjectTest(
+    projectName = "2-intg_1-dataPrep",
+    times       = list(start = 1985, end = 1993),
+    modules     = c(
       "CBM_dataPrep_SK",
-      paste0("PredictiveEcology/CBM_dataPrep@", Sys.getenv("BRANCH_NAME", "development"))
+      paste0("PredictiveEcology/CBM_dataPrep@", ifelse("main" %in% Sys.getenv(c("GITHUB_BASE_REF", "GITHUB_REF_NAME")), "main", "development"))
     ),
-    times   = times,
-    paths   = list(
-      projectPath = spadesTestPaths$projectPath,
-      modulePath  = spadesTestPaths$temp$modules,
-      packagePath = spadesTestPaths$packagePath,
-      inputPath   = spadesTestPaths$inputPath,
-      cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
-    ),
-
-    # Set required packages for project set up
-    require = "terra",
 
     # Set study area
     masterRaster = terra::rast(
